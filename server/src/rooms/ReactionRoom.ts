@@ -1,5 +1,7 @@
 import { Room, Client } from "colyseus";
 import { ReactionRoomState, Player } from "./schema/ReactionRoomState";
+import { pool } from '../database'
+import { calculateEloChange, getKFactor } from "../utils/elo";
 
 export class ReactionRoom extends Room<ReactionRoomState> {
     
@@ -206,12 +208,87 @@ export class ReactionRoom extends Room<ReactionRoomState> {
         }
     }
 
-    private endMatch() {
+    private async endMatch() {
         const players = Array.from(this.state.players.values());
-        const winner = players.find(p => p.wins >= 3) || players[0];
+        const winner = players.find(p => p.wins >= 3);
+        const loser = players.find(p => p.wins < 3);
+
+        if(!winner || !loser) return;
+
+        try {
+            const winnerData = await pool.query(
+                'SELECT * FROM players WHERE username = $1',
+                [winner.username]
+            );
+
+            const loserData = await pool.query(
+                'SELECT * FROM players WHERE username = $1',
+                [loser.username] 
+            );
+
+            if(winnerData.rows[0] && loserData.rows[0]) {
+                const winnerRecord = winnerData.rows[0];
+                const loserRecord = loserData.rows[0];
+
+                // Calculate new ELOs
+                const kFactorWinner = getKFactor(winnerRecord.games_played);
+                const kFactorLoser = getKFactor(loserRecord.games_played);
+
+                const eloChange = calculateEloChange(
+                    winnerRecord.elo,
+                    loserRecord.elo,
+                    Math.max(kFactorWinner, kFactorLoser)
+                );
+
+                // Update winner
+                await pool.query(
+                    `
+                    UPDATE players
+                    SET elo = $1, wins = wins + 1, games_played = games_played + 1, last_played = NOW()
+                    WHERE id = $2
+                    `,
+                    [eloChange.winnerNew, winnerRecord.id]
+                )
+
+
+                // Update loser
+                await pool.query(
+                    `
+                    UPDATE players 
+                    SET elo = $1, losses = losses + 1, games_played = games_played + 1, last_played = NOW()
+                    WHERE id = $2
+                    `,
+                    [eloChange.loserNew, loserRecord.id]
+                );
+
+                // Save match record
+                await pool.query(
+                    `
+                    INSERT INTO matches (player1_id, player2_id, winner_id, 
+                    player1_elo_before, player2_elo_before, player1_elo_after, player2_elo_after)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7)
+                    `,
+                    [
+                        winnerRecord.id,
+                        loserRecord.id,
+                        winnerRecord.id,
+                        winnerRecord.elo,
+                        loserRecord.elo,
+                        eloChange.winnerNew,
+                        eloChange.loserNew
+                    ]
+                );
+
+                console.log(`ELO updated: ${winner.username} ${winnerRecord.elo} → ${eloChange.winnerNew}`);
+            }
+           
+        }
+        catch(error) {
+            console.error('Error updating ELO: ', error);
+        }
 
         this.broadcast("matchEnd", {
-            winner: winner?.username,
+            winner: winner.username,
             finalScores: players.map(p => ({
                 username: p.username,
                 wins: p.wins
