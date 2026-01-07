@@ -1,24 +1,41 @@
+# Dependencies
 node_modules/
 vendor/
 
+# Environment
 .env
 .env.local
 *.local
 
+# Build outputs
 dist/
 build/
+bin/
 *.exe
 
+# Testing
+coverage/
+*.coverprofile
+*.out
+
+# IDE
 .vscode/
 .idea/
 *.swp
 
+# Logs
 *.log
 logs/
 
+# OS
 .DS_Store
 Thumbs.db
 
+# Secrets
 *.pem
 *.key
 secrets/
+
+# Go
+go.work
+go.work.sum

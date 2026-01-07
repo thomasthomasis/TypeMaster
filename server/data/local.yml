@@ -1,0 +1,19 @@
+name: nakama-node-1
+data_dir: "./data/"
+
+logger:
+  stdout: true
+  level: "info"
+  file: ""
+
+console:
+  port: 7351
+  username: "admin"
+  password: "password"
+
+socket:
+  server_key: "defaultkey"
+  port: 7350
+
+runtime:
+  path: "/nakama/data/modules"
