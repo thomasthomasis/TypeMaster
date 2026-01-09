@@ -1,4 +1,3 @@
-version: '3'
 services:
   postgres:
     image: postgres:12.2-alpine
@@ -7,11 +6,20 @@ services:
       - POSTGRES_PASSWORD=localdb
     volumes:
       - data:/var/lib/postgresql/data
+    expose:
+      - "5432"
     ports:
       - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
   nakama:
-    image: heroiclabs/nakama:3.22.0
+    build:
+      context: .
+      dockerfile: Dockerfile
     entrypoint:
       - "/bin/sh"
       - "-ecx"
@@ -20,16 +28,16 @@ services:
         exec /nakama/nakama --config /nakama/data/local.yml --database.address postgres:localdb@postgres:5432/nakama
     restart: always
     depends_on:
-      - postgres
-    volumes:
-      - ./data:/nakama/data
-      - ./modules:/nakama/data/modules
+      postgres:
+        condition: service_healthy
+    environment:
+      - NAKAMA_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
     ports:
-      - "7349:7349"  # gRPC
-      - "7350:7350"  # HTTP
-      - "7351:7351"  # Console
+      - "7349:7349"
+      - "7350:7350"
+      - "7351:7351"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:7350/"]
+      test: ["CMD", "/nakama/nakama", "healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
