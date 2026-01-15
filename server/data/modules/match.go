@@ -12,12 +12,28 @@ const (
 	moduleName = "typing99"
 )
 
+const (
+	OpCodeTyping    = 1 // Client -> Server: "I typed a key"
+	OpCodeUpdate    = 2 // Server -> Client: "Here is the new game state"
+	OpCodeCountdown = 3 // Server -> Client: "Game starting in X..."
+)
+
+type GameStatus int
+
+const (
+	StatusWaiting GameStatus = iota
+	StatusStarting
+	StatusPlaying
+)
+
 // MatchState holds the state of the match
 type MatchState struct {
+	Status          GameStatus              `json:"status"`
 	Paragraph       string                  `json:"paragraph"`
 	Players         map[string]*PlayerState `json:"players"`
 	MatchTime       float64                 `json:"match_time"`
 	TickRate        int                     `json:"tick_rate"`
+	CountdownTicks  int                     `json:"countdown_ticks"`
 	BaseDangerSpeed float64                 `json:"base_danger_speed"`
 }
 
@@ -45,9 +61,9 @@ func (m *Typing99Match) MatchInit(ctx context.Context, logger runtime.Logger, db
 
 	// Initialize match state
 	state := &MatchState{
+		Status:          StatusWaiting,
 		Paragraph:       paragraph,
 		Players:         make(map[string]*PlayerState),
-		MatchTime:       0,
 		TickRate:        10,  // 10 updates per second
 		BaseDangerSpeed: 1.0, // 1 character per second initially
 	}
@@ -112,41 +128,45 @@ func (m *Typing99Match) MatchLeave(ctx context.Context, logger runtime.Logger, d
 func (m *Typing99Match) MatchLoop(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, dispatcher runtime.MatchDispatcher, tick int64, state interface{}, messages []runtime.MatchData) interface{} {
 	matchState := state.(*MatchState)
 
-	matchState.MatchTime += 1.0 / float64(matchState.TickRate)
+	switch matchState.Status {
 
-	for _, message := range messages {
-		switch message.GetOpCode() {
-		case 1: // Player typed a character
-			m.handleTyping(matchState, message, logger)
+	case StatusWaiting:
+		// Transition to starting if we have enough players
+		// For testing with 2 tabs, use >= 2
+		if len(matchState.Players) >= 2 {
+			matchState.Status = StatusStarting
+			matchState.CountdownTicks = 3 * matchState.TickRate
 		}
-	}
 
-	// Update danger carets for all players
-	m.updateDangerCarets(matchState, logger)
+	case StatusStarting:
+		matchState.CountdownTicks--
 
-	// Apply damage to players caught by danger zone
-	m.applyDamage(matchState, logger)
-
-	// Check for eliminated players
-	m.checkEliminations(matchState, logger)
-
-	// Broadcast updated state to all players
-	stateJSON, _ := json.Marshal(matchState)
-	dispatcher.BroadcastMessage(2, stateJSON, nil, nil, true)
-
-	// Check if match should end
-	alivePlayers := 0
-	for _, player := range matchState.Players {
-		if player.IsAlive {
-			alivePlayers++
+		// Broadcast countdown every second to sync clients
+		if matchState.CountdownTicks%matchState.TickRate == 0 {
+			secondsLeft := matchState.CountdownTicks / matchState.TickRate
+			m.broadcastCountdown(dispatcher, secondsLeft)
 		}
+
+		if matchState.CountdownTicks <= 0 {
+			matchState.Status = StatusPlaying
+		}
+
+	case StatusPlaying:
+		// 1. Process Inputs (Typing)
+		for _, message := range messages {
+			if message.GetOpCode() == OpCodeTyping {
+				m.handleTyping(matchState, message, logger)
+			}
+		}
+
+		// 2. Physics & Logic (Danger Zone)
+		matchState.MatchTime += 1.0 / float64(matchState.TickRate)
+		m.updateDangerCarets(matchState, logger)
+		m.applyDamage(matchState, logger)
+		m.checkEliminations(matchState, logger)
 	}
 
-	// End match if 0 or 1 players alive
-	if alivePlayers < 1 {
-		logger.Info("Match ending", "alive_players", alivePlayers)
-		return nil // Returning nil ends the match
-	}
+	m.broadcastUpdate(dispatcher, matchState)
 
 	return matchState
 
@@ -244,4 +264,25 @@ func generateParagraph() string {
 	// For now, return a simple test paragraph
 	// TODO: Implement proper paragraph generation
 	return "The quick brown fox jumps over the lazy dog. This is a test paragraph for our typing battle royale game. Keep typing to stay ahead of the danger zone and survive as long as possible."
+}
+
+// Helper to send a simple countdown number to all players
+func (m *Typing99Match) broadcastCountdown(dispatcher runtime.MatchDispatcher, seconds int) {
+	payload := map[string]int{"seconds": seconds}
+	data, _ := json.Marshal(payload)
+
+	// OpCode 3 is what we defined for Countdowns
+	// nil for presences means "send to everyone"
+	dispatcher.BroadcastMessage(OpCodeCountdown, data, nil, nil, true)
+}
+
+// Helper to send the entire game state to all players
+func (m *Typing99Match) broadcastUpdate(dispatcher runtime.MatchDispatcher, state *MatchState) {
+	data, err := json.Marshal(state)
+	if err != nil {
+		return
+	}
+
+	// OpCode 2 is our "Source of Truth" update
+	dispatcher.BroadcastMessage(OpCodeUpdate, data, nil, nil, true)
 }

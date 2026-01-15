@@ -40,3 +40,17 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Add a blinking effect to the caret */
+@keyframes blink { 
+  0% { background: #4caf50; } 
+  50% { background: transparent; } 
+  100% { background: #4caf50; } 
+}
+.active-char {
+  border-radius: 2px;
+  animation: blink 1s infinite;
+  color: white !important;
+  background: #4caf50;
+  padding: 0 1px;
+}
