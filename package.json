@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.27.1",
+    "howler": "^2.2.4",
+    "lucide-react": "^0.562.0",
+    "react-dom": "^19.2.3",
+    "zustand": "^5.0.10"
+  }
+}

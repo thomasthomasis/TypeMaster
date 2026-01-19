@@ -1,0 +1,30 @@
+/* App.css */
+.game-root {
+  min-height: 100vh;
+  background-color: #000;
+  color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 1rem;
+  padding: 2rem;
+}
+
+.center-view {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+/* This is what we animate for the screen shake */
+.shake-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}

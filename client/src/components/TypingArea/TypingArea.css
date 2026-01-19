@@ -1,0 +1,140 @@
+/* 1. VIEWPORT: The fixed 7-row window */
+.typing-area-window.multi-row {
+  position: relative;
+  width: 960px;  /* 40 characters * 24px */
+  height: 336px; /* 7 rows * 48px */
+  background: #050505;
+  border: 1px solid #1f2937;
+  border-radius: 4px;
+  overflow: hidden; 
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+/* 2. STATS BAR: DPS, WPM, and Storm Speed */
+.storm-stats {
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  z-index: 50;
+  pointer-events: none;
+  text-shadow: 0 0 5px #000;
+}
+
+/* 3. THE CANVAS: This moves behind the fixed center point */
+.text-canvas {
+  position: relative;
+  display: block;
+  width: 960px; 
+  white-space: pre-wrap; /* Allows words to wrap at the 960px boundary */
+  word-break: break-all;
+  padding-left: 480px;  /* (40 chars / 2) * 24px = Centers the X axis */
+  padding-top: 144px;   /* (7 rows / 2) * 48px = Centers the Y axis (approx row 4) */
+  will-change: transform;
+}
+
+/* 4. INDIVIDUAL CHARACTER SLOTS */
+.char-base {
+  position: relative;
+  display: inline-block;
+  width: 24px;   /* Strict width for alignment */
+  height: 48px;  /* Strict height for alignment */
+  line-height: 48px;
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.8rem;
+  color: #374151; /* Pending text color */
+}
+
+.char-typed {
+  color: #22d3ee;
+  text-shadow: 0 0 10px rgba(34, 211, 238, 0.4);
+}
+
+/* 5. THE STORM EFFECTS */
+.char-storm-haze {
+  background-color: rgba(220, 38, 38, 0.15); /* Transparent Red */
+  color: #f87171 !important;
+}
+
+.storm-caret {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #ef4444;
+  box-shadow: 0 0 15px #ef4444;
+  z-index: 5;
+}
+
+.user-caret {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 2px;
+  height: 100%;
+  background-color: #22d3ee;
+  box-shadow: 0 0 10px #22d3ee;
+  z-index: 10;
+  animation: blink 1s infinite;
+}
+
+/* 6. OVERLAYS & VIGNETTE */
+.typing-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  /* Fades text toward the edges to keep focus on the center */
+  background: radial-gradient(
+    circle, 
+    transparent 20%, 
+    rgba(5, 5, 5, 0.4) 60%, 
+    rgba(5, 5, 5, 1) 100%
+  );
+}
+
+.death-screen {
+  position: absolute;
+  inset: 0;
+  background: rgba(127, 29, 29, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 900;
+  letter-spacing: 5px;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+  animation: death-glitch 0.4s ease-out;
+}
+
+/* 7. ANIMATIONS */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+@keyframes death-glitch {
+  0% { transform: scale(1.1); filter: brightness(2); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+/* Hidden input box */
+.invisible-input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  z-index: 101; /* Keeps it above death screen for focus if needed, but we check isDead in JS */
+  cursor: default;
+}

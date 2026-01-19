@@ -1,0 +1,48 @@
+.health-hud-container {
+  width: 100%;
+  max-width: 600px;
+}
+
+.health-label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #6b7280;
+}
+
+.health-bar-track {
+  position: relative;
+  height: 12px;
+  width: 100%;
+  background-color: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.health-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 3;
+}
+
+.health-bar-ghost {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.3);
+  z-index: 2;
+}
+
+.health-pulse-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(239, 68, 68, 0.2);
+  z-index: 4;
+}

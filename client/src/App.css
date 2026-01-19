@@ -1,56 +1,57 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Global Reset */
+body, html {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  color: #fff;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  overflow: hidden; /* Prevents scrollbars during screen shakes */
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.game-root {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  height: 100vh;
+  gap: 1rem;
+  padding: 1.5rem;
+  box-sizing: border-box;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+/* Sidebars (Survivors & Logs) */
+aside {
+  background: rgba(10, 10, 15, 0.5);
+  border: 1px solid #1f2937;
+  border-radius: 4px;
+  padding: 1rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.center-view {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  position: relative;
 }
 
-.card {
-  padding: 2em;
+/* Heading styles */
+.sidebar-title {
+  font-size: 0.75rem;
+  font-weight: bold;
+  letter-spacing: 0.2em;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #374151;
+  padding-bottom: 0.5rem;
 }
 
-.read-the-docs {
-  color: #888;
-}
+.cyan-text { color: #06b6d4; }
+.red-text { color: #ef4444; }
 
-/* Add a blinking effect to the caret */
-@keyframes blink { 
-  0% { background: #4caf50; } 
-  50% { background: transparent; } 
-  100% { background: #4caf50; } 
-}
-.active-char {
-  border-radius: 2px;
-  animation: blink 1s infinite;
-  color: white !important;
-  background: #4caf50;
-  padding: 0 1px;
+/* The GameContainer shake wrapper */
+.game-container-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
