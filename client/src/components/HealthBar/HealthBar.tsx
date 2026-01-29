@@ -1,4 +1,3 @@
-import React from "react";
 import { motion } from "framer-motion";
 import "./HealthBar.css";
 
@@ -18,7 +17,7 @@ export const HealthBar = ({ health }: HealthBarProps) => {
     return (
     <div className="health-hud-container">
       <div className="health-label-row">
-        <span>Vitality</span>
+        <span>Health</span>
         <span>{health}%</span>
       </div>
 

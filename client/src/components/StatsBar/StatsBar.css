@@ -1,0 +1,71 @@
+/* src/components/StatsBar/StatsBar.css */
+.stats-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  background: rgba(0, 0, 0, 0.5);
+  border-bottom: 2px solid rgba(0, 255, 255, 0.3);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.stats {
+    width: 50%;
+    height: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.stat-group {
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+
+.health {
+    width: 50%;
+    height: 100%;
+}
+
+.stat-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+}
+
+.stat-health-bar {
+  display: flex;
+  gap: 2px;
+}
+
+.health-block {
+  width: 12px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.health-block.filled {
+  background: linear-gradient(180deg, #00ffff 0%, #00cccc 100%);
+  box-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.cyan-text {
+  color: #00ffff;
+  text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+}
+
+.red-text {
+  color: #ff0080;
+  text-shadow: 0 0 10px rgba(255, 0, 128, 0.5);
+}

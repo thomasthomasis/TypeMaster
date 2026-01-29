@@ -1,0 +1,47 @@
+/* src/components/Leaderboard/Leaderboard.css */
+.leaderboard {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.leaderboard-item {
+  display: grid;
+  grid-template-columns: 35px 1fr 45px;
+  gap: 8px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 2px;
+  font-size: 12px;
+  transition: background 0.2s ease;
+}
+
+.leaderboard-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.leaderboard-you {
+  background: rgba(0, 255, 255, 0.15);
+  border: 1px solid rgba(0, 255, 255, 0.4);
+  font-weight: bold;
+}
+
+.leaderboard-rank {
+  color: #ffaa00;
+  font-weight: bold;
+}
+
+.leaderboard-name {
+  color: #00ffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-wpm {
+  color: rgba(255, 255, 255, 0.8);
+  text-align: right;
+}

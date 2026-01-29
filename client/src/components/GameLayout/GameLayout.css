@@ -1,0 +1,55 @@
+/* src/components/GameLayout/GameLayout.css */
+.game-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: linear-gradient(180deg, #0a0015 0%, #1a0033 100%);
+  color: white;
+  font-family: 'Courier New', monospace;
+}
+
+.game-main {
+  display: grid;
+  grid-template-columns: 200px 1fr 180px;
+  gap: 20px;
+  flex: 1;
+  padding: 20px;
+  overflow: hidden;
+}
+
+.player-cards-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Custom scrollbar for player cards */
+.player-cards-column::-webkit-scrollbar {
+  width: 6px;
+}
+
+.player-cards-column::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.player-cards-column::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.typing-area-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0; /* Allow flexbox to shrink */
+}
+
+.leaderboard-column {
+  display: flex;
+  flex-direction: column;
+
+  justify-content: center;
+}

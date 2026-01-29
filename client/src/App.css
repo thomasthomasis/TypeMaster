@@ -9,9 +9,11 @@ body, html {
 }
 
 .game-root {
-  display: grid;
-  grid-template-columns: repeat(12, 1fr);
   height: 100vh;
+  width: 100vw;
+
+  display: flex;
+  
   gap: 1rem;
   padding: 1.5rem;
   box-sizing: border-box;
@@ -33,6 +35,8 @@ aside {
   justify-content: center;
   gap: 3rem;
   position: relative;
+
+  width: 100%;
 }
 
 /* Heading styles */

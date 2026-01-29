@@ -33,11 +33,10 @@
 .text-canvas {
   position: relative;
   display: block;
-  width: 960px; 
-  white-space: pre-wrap; /* Allows words to wrap at the 960px boundary */
+  width: 100%; 
+  white-space: pre-wrap; /* Allows words to wrap */
   word-break: break-all;
-  padding-left: 480px;  /* (40 chars / 2) * 24px = Centers the X axis */
-  padding-top: 144px;   /* (7 rows / 2) * 48px = Centers the Y axis (approx row 4) */
+  padding-top: 40px;
   will-change: transform;
 }
 
@@ -97,7 +96,7 @@
   /* Fades text toward the edges to keep focus on the center */
   background: radial-gradient(
     circle, 
-    transparent 20%, 
+    transparent 100%, 
     rgba(5, 5, 5, 0.4) 60%, 
     rgba(5, 5, 5, 1) 100%
   );
