@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"math/rand"
+	"strings"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
@@ -16,6 +18,8 @@ const (
 	OpCodeTyping    = 1 // Client -> Server: "I typed a key"
 	OpCodeUpdate    = 2 // Server -> Client: "Here is the new game state"
 	OpCodeCountdown = 3 // Server -> Client: "Game starting in X..."
+	OpCodeWinner    = 4 // Server -> Client: "Winner Found..."
+	OpCodePrivate   = 5 // Server -> Client: "Private player update..."
 )
 
 type GameStatus int
@@ -28,25 +32,27 @@ const (
 
 // MatchState holds the state of the match
 type MatchState struct {
-	Status          GameStatus              `json:"status"`
-	Paragraph       string                  `json:"paragraph"`
-	Players         map[string]*PlayerState `json:"players"`
-	MatchTime       float64                 `json:"match_time"`
-	TickRate        int                     `json:"tick_rate"`
-	CountdownTicks  int                     `json:"countdown_ticks"`
-	BaseDangerSpeed float64                 `json:"base_danger_speed"`
+	Status             GameStatus              `json:"status"`
+	Players            map[string]*PlayerState `json:"players"`
+	MatchTime          float64                 `json:"match_time"`
+	TickRate           int                     `json:"tick_rate"`
+	CountdownTicks     int                     `json:"countdown_ticks"`
+	StormSpeed         float64                 `json:"storm_speed"`
+	StormCaretPosition float64                 `json:"storm_caret_position"`
+	CurrentDamage      int                     `json:"current_damage"`
 }
 
 // PlayerState holds individual player data
 type PlayerState struct {
-	UserID              string  `json:"user_id"`
-	Username            string  `json:"username"`
-	CaretPosition       int     `json:"caret_position"`        // How many chars typed
-	DangerCaretPosition float64 `json:"danger_caret_position"` // Danger zone position
-	DangerSpeed         float64 `json:"danger_speed"`          // Current danger speed
-	Health              int     `json:"health"`                // 0-100
-	IsAlive             bool    `json:"is_alive"`
-	Score               int     `json:"score"` // Points earned
+	UserID        string           `json:"user_id"`
+	Username      string           `json:"username"`
+	CaretPosition int              `json:"caret_position"` // How many chars typed
+	Health        int              `json:"health"`         // 0-100
+	IsAlive       bool             `json:"is_alive"`
+	Score         int              `json:"score"` // Points earned
+	Paragraph     string           `json:"-"`
+	Offset        int              `json:"offset"`
+	Presence      runtime.Presence `json:"-"` // "-" means don't include in JSON broadcasts
 }
 
 // Typing99Match implements the Match Interface
@@ -56,22 +62,22 @@ type Typing99Match struct{}
 func (m *Typing99Match) MatchInit(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, params map[string]interface{}) (interface{}, int, string) {
 	logger.Info("Initializing Typing 99 Match")
 
-	// Generate a paragraph for the match
-	paragraph := generateParagraph()
-
 	// Initialize match state
 	state := &MatchState{
-		Status:          StatusWaiting,
-		Paragraph:       paragraph,
-		Players:         make(map[string]*PlayerState),
-		TickRate:        10,  // 10 updates per second
-		BaseDangerSpeed: 1.0, // 1 character per second initially
+		Status:     StatusWaiting,
+		Players:    make(map[string]*PlayerState),
+		TickRate:   10,  // 10 updates per second
+		StormSpeed: 1.0, // 1 character per second initially
 	}
 
 	// Label for matchmaking
-	label := ""
+	label := map[string]interface{}{
+		"mode": "battle_royale",
+		"fast": "true",
+	}
+	labelJSON, _ := json.Marshal(label)
 
-	return state, state.TickRate, label
+	return state, state.TickRate, string(labelJSON)
 }
 
 // MatchJoinAttempt is called when a player tries to join
@@ -82,14 +88,14 @@ func (m *Typing99Match) MatchJoinAttempt(ctx context.Context, logger runtime.Log
 
 	// Create player state
 	playerState := &PlayerState{
-		UserID:              presence.GetUserId(),
-		Username:            presence.GetUsername(),
-		CaretPosition:       0,
-		DangerCaretPosition: 0,
-		DangerSpeed:         matchState.BaseDangerSpeed,
-		Health:              100,
-		IsAlive:             true,
-		Score:               0,
+		Presence:      presence,
+		UserID:        presence.GetUserId(),
+		Username:      presence.GetUsername(),
+		CaretPosition: 0,
+		Health:        100,
+		IsAlive:       true,
+		Score:         0,
+		Paragraph:     generateRandomChunk(20),
 	}
 
 	// Add player to match
@@ -108,6 +114,18 @@ func (m *Typing99Match) MatchJoin(ctx context.Context, logger runtime.Logger, db
 	// Send current match state to all players
 	stateJSON, _ := json.Marshal(matchState)
 	dispatcher.BroadcastMessage(1, stateJSON, nil, nil, true)
+
+	for _, presence := range presences {
+		player, exists := matchState.Players[presence.GetUserId()]
+
+		if exists {
+			player.Paragraph = generateRandomChunk(20)
+
+			m.sendPrivateUpdate(dispatcher, player, logger)
+
+			logger.Info("Sent initial private text to player", "uid", presence.GetUserId())
+		}
+	}
 
 	return matchState
 }
@@ -152,18 +170,23 @@ func (m *Typing99Match) MatchLoop(ctx context.Context, logger runtime.Logger, db
 		}
 
 	case StatusPlaying:
-		// 1. Process Inputs (Typing)
+		// Process Inputs (Typing)
 		for _, message := range messages {
 			if message.GetOpCode() == OpCodeTyping {
-				m.handleTyping(matchState, message, logger)
+				m.handleTyping(matchState, message, logger, dispatcher)
 			}
 		}
 
-		// 2. Physics & Logic (Danger Zone)
+		// Physics & Logic (Danger Zone)
 		matchState.MatchTime += 1.0 / float64(matchState.TickRate)
 		m.updateDangerCarets(matchState, logger)
 		m.applyDamage(matchState, logger)
-		m.checkEliminations(matchState, logger)
+
+		// Win Condition Check
+		shouldEnd := m.checkEliminations(matchState, logger, dispatcher)
+		if shouldEnd {
+			return nil // Shut down the match instance
+		}
 	}
 
 	m.broadcastUpdate(dispatcher, matchState)
@@ -185,9 +208,10 @@ func (m *Typing99Match) MatchSignal(ctx context.Context, logger runtime.Logger, 
 
 // Helper functions
 
-func (m *Typing99Match) handleTyping(state *MatchState, message runtime.MatchData, logger runtime.Logger) {
+func (m *Typing99Match) handleTyping(state *MatchState, message runtime.MatchData, logger runtime.Logger, dispatcher runtime.MatchDispatcher) {
 	userID := message.GetUserId()
 	player, exists := state.Players[userID]
+
 	if !exists || !player.IsAlive {
 		return
 	}
@@ -197,73 +221,148 @@ func (m *Typing99Match) handleTyping(state *MatchState, message runtime.MatchDat
 		Character string `json:"character"`
 		Position  int    `json:"position"`
 	}
-	json.Unmarshal(message.GetData(), &data)
-
-	// Validate the character matches the paragraph
-	if data.Position < len(state.Paragraph) && string(state.Paragraph[data.Position]) == data.Character {
-		player.CaretPosition++
-		player.Score += 10
-		logger.Debug("Player typed correctly", "user_id", userID, "position", player.CaretPosition)
-	} else {
-		logger.Debug("Player typed incorrectly", "user_id", userID)
+	if err := json.Unmarshal(message.GetData(), &data); err != nil {
+		logger.Error("Failed to unmarshal typing data: %v", err)
+		return
 	}
 
+	localIndex := data.Position - player.Offset
+
+	// Validate against the player's unique paragraph
+	if localIndex >= 0 && localIndex < len(player.Paragraph) && string(player.Paragraph[localIndex]) == data.Character {
+		player.CaretPosition++
+
+		// 2. SLIDING WINDOW: Trim text behind the player
+		// If the player is more than 50 chars into their current buffer
+		if localIndex > 100 {
+			trimAmount := 30 // Remove 30 chars from the front
+			player.Paragraph = player.Paragraph[trimAmount:]
+			player.Offset += trimAmount
+
+			// Sync the new window to the client immediately
+			m.sendPrivateUpdate(dispatcher, player, logger)
+		}
+
+		// 3. INFINITE GROWTH: Add more text if reaching the end
+		if len(player.Paragraph)-localIndex < 50 {
+			player.Paragraph += " " + generateRandomChunk(10)
+			m.sendPrivateUpdate(dispatcher, player, logger)
+		}
+	}
+
+}
+
+func (m *Typing99Match) sendPrivateUpdate(dispatcher runtime.MatchDispatcher, player *PlayerState, logger runtime.Logger) {
+	// We create a specific payload for the private update
+	payload := map[string]interface{}{
+		"paragraph": player.Paragraph,
+		"offset":    player.Offset,
+	}
+
+	data, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("Failed to marshal private update: %v", err)
+		return
+	}
+
+	// We wrap the single player's Presence in a slice.
+	// This tells Nakama: "Only send this to this specific person."
+	presences := []runtime.Presence{player.Presence}
+
+	// We use OpCode 5 (or any unused number) for "Private Content Update"
+	dispatcher.BroadcastMessage(5, data, presences, nil, true)
 }
 
 func (m *Typing99Match) updateDangerCarets(state *MatchState, logger runtime.Logger) {
-	deltaTime := 1.0 / float64(state.TickRate)
-
-	// Increase danger speed over time (every 30 seconds, increase by 10%)
-	speedMultiplier := 1.0 + (state.MatchTime / 30.0 * 0.1)
-
-	for _, player := range state.Players {
-		if !player.IsAlive {
-			continue
-		}
-
-		// Update danger caret position
-		player.DangerSpeed = state.BaseDangerSpeed * speedMultiplier
-		player.DangerCaretPosition += player.DangerSpeed * deltaTime
-
+	if state.Status != StatusPlaying || state.MatchTime < 5.0 {
+		return
 	}
+
+	deltaTime := 1.0 / float64(state.TickRate)
+	elapsedActiveTime := state.MatchTime - 5.0
+
+	// Global Speed & Damage Scaling
+	state.StormSpeed = 1.0 + (elapsedActiveTime / 20.0 * 0.15)
+	state.CurrentDamage = 5 + int(state.MatchTime/60.0*5)
+
+	// Move the ONE global storm
+	state.StormCaretPosition += state.StormSpeed * deltaTime
 }
 
 func (m *Typing99Match) applyDamage(state *MatchState, logger runtime.Logger) {
+
+	damageThisTick := float64(state.CurrentDamage) / float64(state.TickRate)
+
 	for _, player := range state.Players {
 		if !player.IsAlive {
 			continue
 		}
 
-		// Check if danger caret has overtaken player
-		gap := float64(player.CaretPosition) - player.DangerCaretPosition
-		if gap < 0 {
-			// Player is behind danger zone - take damage
-			damagePerSecond := 5
-			damageThisTick := int(float64(damagePerSecond) / float64(state.TickRate))
-			player.Health -= damageThisTick
+		if state.StormCaretPosition > float64(player.CaretPosition) {
+
+			currentHealth := float64(player.Health)
+			updatedHealth := currentHealth - damageThisTick
+
+			player.Health = int(updatedHealth)
+
+			logger.Debug("Player in storm", "user_id", player.UserID, "health", player.Health, "storm_pos", state.StormCaretPosition, "player_pos", player.CaretPosition)
 
 			if player.Health < 0 {
 				player.Health = 0
 			}
-
-			logger.Debug("Player taking damage", "user_id", player.UserID, "health", player.Health)
 		}
 	}
 }
 
-func (m *Typing99Match) checkEliminations(state *MatchState, logger runtime.Logger) {
-	for _, player := range state.Players {
-		if player.IsAlive && player.Health <= 0 {
-			player.IsAlive = false
-			logger.Info("Player eliminated", "user_id", player.UserID)
+func (m *Typing99Match) checkEliminations(state *MatchState, logger runtime.Logger, dispatcher runtime.MatchDispatcher) bool {
+
+	aliveCount := 0
+	var winnerID string
+
+	for id, p := range state.Players {
+		if p.IsAlive && p.Health <= 0 {
+			p.IsAlive = false
+			logger.Info("Player eliminated ", "user_id", id)
+		}
+
+		if p.IsAlive {
+			aliveCount++
+			winnerID = id
 		}
 	}
+
+	if aliveCount <= 1 && state.Status == StatusPlaying {
+		// Handle the win!
+		logger.Info("Match over. Winner: ", winnerID)
+
+		resultData, _ := json.Marshal(map[string]string{"winner": winnerID})
+		dispatcher.BroadcastMessage(OpCodeWinner, resultData, nil, nil, true)
+
+		return true // Signal to terminate
+	}
+
+	return false // Match continues
 }
 
-func generateParagraph() string {
-	// For now, return a simple test paragraph
-	// TODO: Implement proper paragraph generation
-	return "The quick brown fox jumps over the lazy dog. This is a test paragraph for our typing battle royale game. Keep typing to stay ahead of the danger zone and survive as long as possible."
+func generateRandomChunk(wordCount int) string {
+	// A simple pool of words to pick from randomly
+	words := []string{
+		"quantum", "velocity", "keyboard", "protocol", "cyberpunk", "override",
+		"syntax", "compiler", "network", "latency", "bandwidth", "firewall",
+		"database", "variable", "function", "encryption", "bitrate", "algorithm",
+	}
+
+	var chunk strings.Builder
+	for i := range wordCount {
+		// Pick a random word from the slice
+		word := words[rand.Intn(len(words))]
+		if i == 0 {
+			chunk.WriteString(word)
+		} else {
+			chunk.WriteString(" " + word)
+		}
+	}
+	return chunk.String()
 }
 
 // Helper to send a simple countdown number to all players
