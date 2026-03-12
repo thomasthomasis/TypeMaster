@@ -36,3 +36,13 @@ cors:
   exposed_headers:
     - "*"
 
+social:
+  email:
+    verification_required: true
+
+mail:
+  host: "mailhog"
+  port: 1025
+  from_address: "noreply@typing99.com"
+  from_name: "Typig 99"
+

@@ -1,13 +1,206 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>client</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TYPING 99 | Battle Royale</title>
+    <style>
+        :root {
+            --neon-green: #00ff66;
+            --bg-dark: #0a0a0b;
+            --surface: #161618;
+            --text-main: #e0e0e0;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* --- HEADER --- */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 5%;
+            background: rgba(22, 22, 24, 0.95);
+            border-bottom: 1px solid #333;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--neon-green);
+            text-transform: uppercase;
+        }
+
+        .nav-auth-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* --- BUTTONS --- */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid #444;
+        }
+
+        .btn-outline:hover { border-color: var(--neon-green); color: var(--neon-green); }
+
+        .btn-primary {
+            background: var(--neon-green);
+            color: #000;
+        }
+
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 255, 102, 0.3); }
+
+        /* --- MAIN HERO --- */
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            text-align: center;
+            padding: 0 10%;
+        }
+
+        .hero-title { font-size: 4rem; margin-bottom: 0.5rem; font-weight: 900; }
+        .hero-subtitle { font-size: 1.2rem; color: #888; margin-bottom: 2rem; }
+
+        .quick-play-area {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid #222;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--surface);
+            padding: 30px;
+            border-radius: 8px;
+            width: 350px;
+            border: 1px solid #333;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: #000;
+            border: 1px solid #333;
+            color: white;
+            box-sizing: border-box;
+            border-radius: 4px;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo">Typing 99</div>
+        <div class="nav-auth-group" id="auth-nav">
+            <div id="logged-out-ui">
+                <button class="btn btn-outline" onclick="openModal()">Login</button>
+                <button class="btn btn-primary" onclick="openModal()">Sign Up</button>
+            </div>
+            <div id="logged-in-ui" class="hidden">
+                <span id="user-display" style="margin-right: 15px; color: var(--neon-green);"></span>
+                <button class="btn btn-outline" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <h1 class="hero-title">SURVIVE THE STROKES</h1>
+        <p class="hero-subtitle">The world's fastest Battle Royale typing game.</p>
+        
+        <div class="quick-play-area">
+            <h2 id="lobby-status">Ready to start?</h2>
+            <p id="stats-summary" class="hidden"></p>
+            <button class="btn btn-primary" style="width: 100%; padding: 20px; font-size: 1.2rem;" id="btn-quick-play">
+                QUICK PLAY
+            </button>
+            <p style="font-size: 0.8rem; color: #555; margin-top: 15px;">
+                Playing as Guest. Create an account to save your Rank.
+            </p>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="auth-modal">
+      <div class="modal">
+          <h2 id="modal-title">Login</h2>
+          
+          <div id="signup-only-fields" class="hidden">
+              <input type="text" id="reg-username" placeholder="Unique Username">
+          </div>
+
+          <input type="text" id="login-id" placeholder="Username or Email">
+          <input type="password" id="login-password" placeholder="Password">
+          
+          <button class="btn btn-primary" id="btn-submit-auth">Go</button>
+          
+          <p style="font-size: 0.8rem; cursor: pointer; color: var(--neon-green);" onclick="toggleAuthMode()">
+              <span id="auth-toggle-text">Don't have an account? Sign Up</span>
+          </p>
+      </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+
+    <script>
+        // Simple UI helpers for the modal
+        
+      function toggleAuthMode() {
+          const title = document.getElementById('modal-title');
+          const extraFields = document.getElementById('signup-only-fields');
+          const toggleText = document.getElementById('auth-toggle-text');
+
+          if (title.innerText === "Login") {
+              title.innerText = "Sign Up";
+              extraFields.classList.remove('hidden');
+              toggleText.innerText = "Already have an account? Login";
+          } else {
+              title.innerText = "Login";
+              extraFields.classList.add('hidden');
+              toggleText.innerText = "Don't have an account? Sign Up";
+          }
+      }
+    </script>
+</body>
 </html>
