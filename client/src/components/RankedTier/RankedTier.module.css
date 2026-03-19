@@ -1,0 +1,99 @@
+.moduleOverlay {
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #111;
+  border-left: 4px solid var(--voltage-green);
+  box-shadow: 20px 20px 0px #000;
+  width: 100%;
+  max-width: 900px;
+  margin: 40px auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.moduleHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--voltage-green);
+  font-weight: 900;
+  font-size: 0.85rem;
+  letter-spacing: 3px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #222;
+  margin-bottom: 40px;
+  text-transform: lowercase;
+}
+
+.rankProgress {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 60px;
+  padding: 0 20px;
+}
+
+.rankNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.2;
+  transition: all 0.4s ease;
+}
+
+.activeRank {
+  opacity: 1;
+  transform: scale(1.1);
+  color: var(--voltage-green);
+  text-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+}
+
+.rankIndex {
+  font-size: 0.6rem;
+  color: #555;
+}
+
+.rankLabel {
+  font-weight: 900;
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+}
+
+/* Visualization of the "Bar" connecting ranks */
+.rankNode::after {
+  content: "";
+  width: 2px;
+  height: 20px;
+  background: #222;
+}
+
+.activeRank::after {
+  background: var(--voltage-green);
+  box-shadow: 0 0 10px var(--voltage-green);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.statCard {
+  background: #050505;
+  padding: 25px;
+  border: 1px solid #1a1a1a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: border-color 0.3s ease;
+}
+
+.statCard:hover {
+  border-color: #333;
+}
+
+.statCard span {
+  font-size: 0.75rem;
+  color: #888;
+  letter-spacing: 1px;
+}

@@ -1,0 +1,158 @@
+.lobbyContainer {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  overflow: hidden;
+}
+
+/* THE 100-SQUARE GRID */
+.gridBackground {
+  position: absolute;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(10, 1fr);
+  gap: 10px;
+  width: 90vw;
+  height: 90vh;
+  opacity: 0.4;
+}
+
+.gridCell {
+  border: 1px solid #111;
+  background: rgba(0, 0, 0, 0.5);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.cellActive {
+  background: rgba(0, 255, 102, 0.1);
+  border-color: var(--voltage-green);
+}
+
+.cellGlow {
+  position: absolute;
+  inset: 0;
+  background: var(--voltage-green);
+  opacity: 0.4;
+  filter: blur(4px);
+  animation: flicker 0.1s infinite alternate;
+}
+
+/* HERO CARD */
+.heroCard {
+  position: relative;
+  z-index: 10;
+  width: 450px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 2px solid var(--voltage-green);
+  padding: 30px;
+  box-shadow: 0 0 50px rgba(0, 255, 102, 0.2);
+  backdrop-filter: blur(20px);
+}
+
+.heroHeader {
+  color: var(--voltage-green);
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 10px;
+}
+
+.countContainer {
+  font-family: 'JetBrains Mono', monospace;
+  margin: 20px 0;
+}
+
+.count {
+  font-size: 4rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.total {
+  color: #555;
+  font-size: 1.5rem;
+}
+
+.progressBar {
+  height: 4px;
+  background: #111;
+  width: 100%;
+  margin: 20px 0;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--voltage-green);
+  box-shadow: 0 0 10px var(--voltage-green);
+}
+
+@keyframes flicker {
+  from { opacity: 0.2; }
+  to { opacity: 0.5; }
+}
+
+.gridCell {
+  border: 1px solid #111;
+  background: rgb(0, 0, 0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.playerMiniCard {
+  width: 100%;
+  height: 100%;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  /* DARK PLATE: This separates the text from the grid lines */
+  background: rgba(0, 0, 0, 0.7); 
+  font-family: 'JetBrains Mono', monospace;
+  pointer-events: none;
+  border: 1px solid rgba(0, 255, 102, 0.1);
+}
+
+.miniName {
+  /* Increased size slightly and forced bold for legibility */
+  font-size: 0.6rem; 
+  font-weight: 700;
+  color: var(--voltage-green);
+  /* GLOW: Makes the text look like an LED */
+  text-shadow: 0 0 5px rgba(0, 255, 102, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: lowercase;
+}
+
+.miniStats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.5rem;
+  font-weight: 600;
+  color: #fff; /* Switched to white for maximum contrast against green names */
+}
+
+.miniRank {
+  color: #000;
+  background: var(--voltage-green); /* Inverted for high-visibility "Badge" look */
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-size: 0.4rem;
+  font-weight: 900;
+}
+
+.cellActive {
+  border-color: rgba(0, 255, 102, 0.3);
+  box-shadow: inset 0 0 10px rgba(0, 255, 102, 0.05);
+}

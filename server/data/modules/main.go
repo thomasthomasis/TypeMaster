@@ -45,7 +45,9 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
-	initializer.RegisterRpc("verify_email", VerifyEmailCodeRPC)
+	if err := initializer.RegisterRpc("verify_email_code", VerifyEmailCodeRPC); err != nil {
+		return nil
+	}
 
 	// Leaderboards (Ranked Mode)
 	// Setup seasonal or global rankings.

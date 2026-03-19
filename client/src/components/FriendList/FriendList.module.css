@@ -1,0 +1,88 @@
+.moduleOverlay {
+  padding: 40px;
+  background: rgba(0, 0, 0, 0.95);
+  border: 1px solid #111;
+  border-left: 4px solid var(--voltage-green);
+  box-shadow: 20px 20px 0px #000;
+  width: 100%;
+  max-width: 700px;
+  margin: 40px auto;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.moduleHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--voltage-green);
+  font-weight: 900;
+  font-size: 0.85rem;
+  letter-spacing: 2px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #222;
+  margin-bottom: 20px;
+}
+
+.friendList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.friendItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.01);
+  border-bottom: 1px solid #111;
+  transition: background 0.2s ease;
+}
+
+.friendItem:hover {
+  background: rgba(0, 255, 102, 0.03);
+}
+
+.friendInfo {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.friendName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #eee;
+  letter-spacing: 1px;
+}
+
+.friendMeta {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.friendMeta span {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.statusBadge {
+  font-size: 0.6rem;
+  padding: 3px 8px;
+  background: #111;
+  border: 1px solid #222;
+  color: #555;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+/* Specific status styling */
+.friendItem:has(.online) {
+  border-left: 2px solid var(--voltage-green);
+}
+
+.online {
+  color: var(--voltage-green) !important;
+  border-color: var(--voltage-green) !important;
+}

@@ -1,0 +1,96 @@
+.heroWrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-width: 100vw;
+  text-align: center;
+  overflow: hidden;
+  background-color: var(--bg-obsidian);
+}
+
+.contentEntry {
+  position: relative;
+  z-index: 10;
+}
+
+.mainTitle {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.05em;
+  line-height: 0.9;
+  margin-bottom: 1rem;
+  font-style: italic;
+  text-transform: lowercase;
+}
+
+.highlight {
+  color: var(--voltage-green);
+  /* Optional: adds a subtle glitch-like glow */
+  text-shadow: 0 0 20px var(--voltage-green-glow);
+}
+
+.subtitle {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  text-transform: lowercase;
+  letter-spacing: 0.3em;
+  font-weight: 700;
+  margin-bottom: 3rem;
+}
+
+.ctaContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background-color: var(--voltage-green);
+  color: #000;
+  font-size: 1.5rem;
+  font-weight: 900;
+  padding: 1.25rem 3rem;
+  border: 3px solid #000;
+  cursor: pointer;
+  text-transform: lowercase;
+  box-shadow: var(--hard-shadow);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.metaInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #555;
+  font-weight: bold;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--voltage-green);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--voltage-green);
+}
+
+.bgGrid {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, #111 1px, transparent 1px),
+    linear-gradient(to bottom, #111 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  z-index: 1;
+}

@@ -41,9 +41,17 @@ async function refreshUI() {
         const isPro = account.email && account.email.length > 0;
 
         // 3. Update Header UI
+        // Inside refreshUI(), update Step 3:
         const userDisplay = document.getElementById('user-display');
-        const badge = isPro ? "" : ' <small style="color: #888; font-size: 0.7rem;">(GUEST)</small>';
-        userDisplay.innerHTML = `${user.username}${badge}`;
+
+        // Check if email is verified in the Nakama account object
+        const isVerified = account.verify_time && account.verify_time.length > 0;
+        const verifyBadge = isVerified ? ' <span title="Verified Account" style="color:var(--neon-green); margin-left:5px;">✔</span>' : '';
+
+        const guestBadge = isPro ? "" : ' <small style="color: #888; font-size: 0.7rem;">(GUEST)</small>';
+
+        userDisplay.innerHTML = `${user.username}${verifyBadge}${guestBadge}`;
+        
 
         // Toggle visibility of Auth groups
         document.getElementById('logged-out-ui').classList.add('hidden');
@@ -143,70 +151,109 @@ async function submitAuth() {
     const modalTitle = document.getElementById('modal-title').innerText;
     const isSignUp = modalTitle === "Sign Up";
     
-    const email = document.getElementById('login-id').value; 
+    const identifier = document.getElementById('login-id').value; // Username or Email
     const password = document.getElementById('login-password').value;
     const chosenUsername = document.getElementById('reg-username').value;
 
     try {
         if (isSignUp) {
             if (session) {
-                // --- CASE A: UPGRADE EXISTING GUEST ---
-                console.log("Linking email to current guest session...");
-                
-                // This attaches the email/password to the current user_id
-                await client.linkEmail(session, email, password);
-                
-                // Now change the username from the guest name to the chosen one
-                await client.updateAccount(session, {
-                    username: chosenUsername,
-                    display_name: chosenUsername
-                });
-                
-                alert("Account upgraded! You can now log in with your email.");
+                await client.linkEmail(session, identifier, password);
+                await client.updateAccount(session, { username: chosenUsername, display_name: chosenUsername });
+                window.openVerifyModal();
             } else {
-                // --- CASE B: FRESH SIGNUP ---
-                // No guest session exists, create a brand new account
-                session = await client.authenticateEmail(email, password, true, chosenUsername);
+                session = await client.authenticateEmail(identifier, password, true, chosenUsername);
+                window.openVerifyModal();
             }
         } else {
-            // --- CASE C: LOGIN ---
-            const emailParam = email.includes("@") ? email : "";
-            const userParam = email.includes("@") ? "" : email;
+            // --- ADDED LOGIN LOGIC ---
+            const emailParam = identifier.includes("@") ? identifier : "";
+            const userParam = identifier.includes("@") ? "" : identifier;
             session = await client.authenticateEmail(emailParam, password, false, userParam);
         }
 
-        // Save session and update UI
         localStorage.setItem("nakama_token", session.token);
-        closeModal();
+        window.closeModal();
         await refreshUI();
 
     } catch (e) {
-        if (e.status === 409) {
-            alert("Username or Email already taken!");
-        } else {
-            alert("Authentication Error: " + e.message);
-        }
+        alert("Auth Error: " + (e.message || "Check credentials"));
     }
 }
 
-function openModal() { document.getElementById('auth-modal').style.display = 'flex'; }
-function closeModal() { document.getElementById('auth-modal').style.display = 'none'; }
+// --- VERIFICATION LOGIC ---
 
+// Helper to open/close the verify modal
+window.openVerifyModal = () => document.getElementById('verify-modal').style.display = 'flex';
+window.closeVerifyModal = () => {
+    document.getElementById('verify-modal').style.display = 'none';
+    // Clear inputs on close
+    document.querySelectorAll('#code-inputs input').forEach(i => i.value = '');
+};
 
-document.getElementById('auth-modal').addEventListener('click', (e) => {
-    if (e.target.id === 'auth-modal') closeModal();
+// Handle Auto-Focusing of the 6 boxes
+const codeInputs = document.querySelectorAll('#code-inputs input');
+codeInputs.forEach((input, index) => {
+    input.addEventListener('input', (e) => {
+        if (e.target.value.length === 1 && index < codeInputs.length - 1) {
+            codeInputs[index + 1].focus(); 
+        }
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && index > 0) {
+            codeInputs[index - 1].focus();
+        }
+    });
 });
+
+// The Submit Function
+async function submitVerification() {
+    const code = Array.from(codeInputs).map(i => i.value).join('');
+    
+    if (code.length !== 6) {
+        alert("Please enter all 6 digits.");
+        return;
+    }
+
+    try {
+        const response = await client.rpc(session, "verify_email_code", { code: code });
+        alert("Verification Successful! Rank and Rewards Unlocked.");
+        window.closeVerifyModal();
+        await refreshUI();
+    } catch (e) {
+        console.error("Verification failed", e);
+        alert("Invalid code. Please check your email.");
+        codeInputs.forEach(i => i.value = '');
+        codeInputs[0].focus();
+    }
+}
+
+// --- EVENT LISTENERS ---
+
+document.getElementById('btn-quick-play').onclick = quickPlay;
+document.getElementById('btn-submit-auth').onclick = submitAuth;
+document.getElementById('btn-submit-verify').onclick = submitVerification;
+
+// Close modals when clicking outside
+window.onclick = (event) => {
+    if (event.target.classList.contains('modal-overlay')) {
+        event.target.style.display = 'none';
+    }
+};
+
+window.openModal = () => {
+    document.getElementById('auth-modal').style.display = 'flex';
+};
+
+window.closeModal = () => {
+    document.getElementById('auth-modal').style.display = 'none';
+};
 
 window.logout = () => {
     localStorage.removeItem("nakama_token");
     window.location.reload();
 };
 
-window.openModal = openModal;
-window.closeModal = closeModal;
-
-
-document.getElementById('btn-quick-play').onclick = quickPlay;
-document.getElementById('btn-submit-auth').onclick = submitAuth;
-
+// Initialize the app
 init();

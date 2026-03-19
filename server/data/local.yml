@@ -1,6 +1,10 @@
 name: nakama-node-1
 data_dir: "./data/"
 
+session:
+  token_expiry_sec: 3600
+  refresh_token_expiry_sec: 604800
+
 logger:
   stdout: true
   level: "info"

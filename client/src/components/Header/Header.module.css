@@ -1,0 +1,193 @@
+.header {
+  height: 70px;
+  background-color: #000;
+  border-bottom: 3px solid var(--voltage-green);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+  position: relative;
+  z-index: 100;
+  /* Neobrutalist Hard Shadow */
+  box-shadow: 0 5px 0 #000;
+}
+
+.brandGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  display:flex;
+  flex-direction: column;
+  gap: 5px;
+
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  font-size: 1.4rem;
+  letter-spacing: -1px;
+  color: var(--voltage-green);
+  font-style: italic;
+  cursor: pointer;
+}
+
+.versionBadge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  color: #888;
+  margin-top: -4px;
+}
+
+.navLinks {
+  display: flex;
+  gap: 15px;
+}
+
+.navBtn {
+  background: transparent;
+  border: 1px solid #222;
+  color: #888;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.navBtn:hover {
+  border-color: var(--voltage-green);
+  color: var(--voltage-green);
+  box-shadow: 4px 4px 0 var(--voltage-green);
+}
+
+.active {
+  color: var(--voltage-green) !important;
+}
+
+
+
+.statusGroup {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.onlineStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.pulse {
+  animation: pulse-ring 2s infinite;
+}
+
+@keyframes pulse-ring {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+.divider {
+  width: 1px;
+  height: 30px;
+  background-color: #222;
+}
+
+.settingsBtn {
+  background: none;
+  border: none;
+  color: #444;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.settingsBtn:hover {
+  color: var(--voltage-green);
+}
+
+.authSlot {
+  display: flex;
+  align-items: center;
+}
+
+.loginBtn {
+  background: var(--voltage-green);
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  text-transform: lowercase;
+  font-size: 0.75rem;
+  transition: transform 0.1s active;
+  box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+}
+
+.loginBtn:hover {
+  filter: brightness(1.1);
+  box-shadow: 0 0 25px rgba(0, 255, 102, 0.6);
+}
+
+.loginBtn:active {
+  transform: scale(0.95);
+}
+
+.userWrapper {
+  position: relative;
+  /* Adds a small invisible padding so the menu doesn't close 
+     if there's a tiny gap between the button and dropdown */
+  padding-bottom: 5px; 
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  width: 200px;
+  background: #000;
+  border: 1px solid var(--voltage-green);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 0;
+  z-index: 1000;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+.dropdown button {
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 10px 20px;
+  text-align: left;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.dropdown button:hover {
+  background: rgba(0, 255, 102, 0.1);
+  color: var(--voltage-green);
+}
+
+.dropDivider {
+  height: 1px;
+  background: #222;
+  margin: 5px 15px;
+}
+
+.logoutBtn:hover {
+  color: #ff4444 !important;
+  background: rgba(255, 68, 68, 0.1) !important;
+}

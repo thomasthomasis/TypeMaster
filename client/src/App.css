@@ -1,61 +1,9 @@
-/* Global Reset */
-body, html {
-  margin: 0;
-  padding: 0;
-  background-color: #000;
-  color: #fff;
-  font-family: 'JetBrains Mono', 'Courier New', monospace;
-  overflow: hidden; /* Prevents scrollbars during screen shakes */
-}
-
-.game-root {
-  height: 100vh;
-  width: 100vw;
-
-  display: flex;
-  
-  gap: 1rem;
-  padding: 1.5rem;
-  box-sizing: border-box;
-}
-
-/* Sidebars (Survivors & Logs) */
-aside {
-  background: rgba(10, 10, 15, 0.5);
-  border: 1px solid #1f2937;
-  border-radius: 4px;
-  padding: 1rem;
-}
-
-.center-view {
-  grid-column: span 8;
+.app-container {
+  min-height: 100vh;
+  background-color: var(--bg-obsidian);
+  color: var(--text-main);
+  overflow-x: hidden;
+  /* Ensure a smooth transition environment */
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3rem;
-  position: relative;
-
-  width: 100%;
-}
-
-/* Heading styles */
-.sidebar-title {
-  font-size: 0.75rem;
-  font-weight: bold;
-  letter-spacing: 0.2em;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #374151;
-  padding-bottom: 0.5rem;
-}
-
-.cyan-text { color: #06b6d4; }
-.red-text { color: #ef4444; }
-
-/* The GameContainer shake wrapper */
-.game-container-wrapper {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }

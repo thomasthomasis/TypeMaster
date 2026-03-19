@@ -1,0 +1,108 @@
+.mascotContainer {
+  position: relative;
+  width: 400px;
+  height: 400px;
+  background-color: #000;
+  overflow: hidden;
+  border: 4px solid #000;
+  box-shadow: var(--hard-shadow);
+}
+
+.zolaHead {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.1);
+}
+
+/* --- THE GLASSES (GLOW SOURCE) --- */
+.glassesBlock {
+  position: relative;
+  width: 250px;
+  height: 80px;
+  display: flex;
+  gap: 20px;
+}
+
+.leftLens, .rightLens {
+  flex: 1;
+  background-color: var(--voltage-green);
+  box-shadow: 0 0 50px var(--voltage-green); /* Peak brightness */
+  border-radius: 4px; /* Brutalist slight rounding */
+}
+
+/* Pseudo-element for the intense upper-shine */
+.leftLens::after, .rightLens::after {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  height: 20px;
+  background-color: #fff; /* Pure white creates the core of the shine */
+  opacity: 0.8;
+}
+
+/* --- THE HANDS (MOUTH) --- */
+.mouthHandsBlock {
+  position: relative;
+  width: 280px;
+  height: 150px;
+  margin-top: -30px; /* Interlaced over the glasses slightly */
+}
+
+.handLeft, .handRight {
+  position: absolute;
+  width: 140px;
+  height: 100%;
+  background: linear-gradient(
+    135deg,
+    #000 0%,
+    transparent 1px
+  );
+  background-color: rgba(0, 255, 102, 0.4); /* Lower intensity for depth */
+  border-top: 2px solid var(--voltage-green);
+}
+
+.handLeft {
+  left: 0;
+  /* Clip-Path to define the steepled hand shape */
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.handRight {
+  right: 0;
+  clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+/* Define the interlaced fingers using gradients */
+.handLeft::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    #000 0px,
+    #000 5px,
+    transparent 5px,
+    transparent 10px
+  );
+}
+
+/* --- MATRIX OVERLAYS --- */
+.scanlineOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.8) 2px,
+    rgba(0, 0, 0, 0.8) 4px
+  );
+  pointer-events: none;
+}

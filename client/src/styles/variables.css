@@ -1,0 +1,14 @@
+:root {
+  --bg-obsidian: #0a0a0b;
+  --voltage-green: #00ff66;
+  --voltage-green-glow: rgba(0, 255, 102, 0.3);
+  --text-main: #e0e0e0;
+  --text-muted: #888;
+  
+  /* Neobrutalist Shadow */
+  --hard-shadow: 8px 8px 0px 0px #000;
+  --hard-shadow-hover: 12px 12px 0px 0px #000;
+  
+  /* Glitch Timing */
+  --glitch-speed: 4s;
+}
