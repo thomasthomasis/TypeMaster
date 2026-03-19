@@ -22,6 +22,7 @@
   flex-direction: column;
   gap: 5px;
 
+  text-decoration: none;
   font-family: 'Space Grotesk', sans-serif;
   font-weight: 900;
   font-size: 1.4rem;
@@ -44,8 +45,9 @@
 }
 
 .navBtn {
+  text-decoration: none;
   background: transparent;
-  border: 1px solid #222;
+  border: 1px solid #383838;
   color: #888;
   padding: 8px 16px;
   display: flex;
@@ -132,6 +134,7 @@
   font-size: 0.75rem;
   transition: transform 0.1s active;
   box-shadow: 0 0 15px rgba(0, 255, 102, 0.4);
+  text-decoration: none;
 }
 
 .loginBtn:hover {
@@ -190,4 +193,43 @@
 .logoutBtn:hover {
   color: #ff4444 !important;
   background: rgba(255, 68, 68, 0.1) !important;
+}
+
+.guestContainer {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.guestBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #ffaa00; /* Warning Yellow */
+  font-size: 0.7rem;
+  letter-spacing: 1px;
+  border: 1px solid #ffaa0033;
+  padding: 4px 8px;
+  background: #ffaa0011;
+}
+
+.saveBtn {
+  color: var(--voltage-green);
+  text-decoration: none;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: bold;
+  transition: 0.2s;
+  animation: pulse 2s infinite; /* Subtle pulse to draw attention */
+}
+
+@keyframes pulse {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; text-shadow: 0 0 10px var(--voltage-green); }
+  100% { opacity: 0.7; }
+}
+
+.saveBtn:hover {
+  background: var(--voltage-green);
+  color: #000;
 }

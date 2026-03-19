@@ -27,13 +27,15 @@ services:
       - "-ecx"
       - >
         /nakama/nakama migrate up --database.address postgres:localdb@postgres:5432/nakama &&
-        exec /nakama/nakama --config /nakama/data/local.yml --database.address postgres:localdb@postgres:5432/nakama
+        exec /nakama/nakama --database.address postgres:localdb@postgres:5432/nakama --logger.level DEBUG --config /nakama/data/local.yml
     restart: always
     depends_on:
       postgres:
         condition: service_healthy
     environment:
       - NAKAMA_CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+      - NAKAMA_RUNTIME_ENV_DISCORD_CLIENT_ID=1484155345159979038
+      - NAKAMA_RUNTIME_ENV_DISCORD_CLIENT_SECRET=yOCOwXSlhfAkZgkccPPeYPHr0bRlbIZY
     ports:
       - "7349:7349"
       - "7350:7350"

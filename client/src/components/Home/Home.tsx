@@ -1,10 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Trophy, Activity } from 'lucide-react';
-import { Header } from '../Header/Header';
 import { MatrixRain } from '../MatrixRain/MatrixRain';
 import { PlayButton } from '../PlayButton/PlayButton';
 import styles from './Home.module.css';
+
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../store/store';
+import { nakamaService } from '../../services/nakama';
+import { setAuth } from '../../store/authSlice';
 
 const SYSTEM_MESSAGES = [
   "execute_strike_protocol",
@@ -19,6 +23,9 @@ interface HomeProps {
 
 export const Home: React.FC<HomeProps> = ({ onFindMatch }) => {
 
+  const dispatch = useDispatch();
+  const session = useSelector((state: RootState) => state.auth.session);
+
   const [isHovered, setIsHovered] = useState(false);
   const [isEmpActive, setIsEmpActive] = useState(false);
   const [pulseIntensity, setPulseIntensity] = useState(0);
@@ -28,18 +35,29 @@ export const Home: React.FC<HomeProps> = ({ onFindMatch }) => {
   const [displayText, setDisplayText] = useState("");
   const [msgIndex, setMsgIndex] = useState(0);
   const [isDeleting, setIsDeleting] = useState(false);
-  const isLoggedIn = true;
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleFindMatch = () => {
-    setIsEmpActive(true); // Kill the Matrix Rain and fire the pulse
+  const handleFindMatch = async () => {
+    try {
+      if(!session) {
+        console.log("home_handshake: initializing_guest_login");
+        const guestSession = await nakamaService.authenticateGuest();
+        dispatch(setAuth({ session: guestSession, isGuest: true }))
+      }
+
+      setIsEmpActive(true); // Kill the Matrix Rain and fire the pulse
+
+      // Simulate the system "rebooting" into the lobby after the explosion
+      setTimeout(() => {
+        console.log("SIGNALING_APP_PHASE_CHANGE");
+        onFindMatch();
+      }, 1500);
+    }
+    catch(err) {
+      console.error("home_auth_failure", err)
+    }
     
-    // Simulate the system "rebooting" into the lobby after the explosion
-    setTimeout(() => {
-      console.log("SIGNALING_APP_PHASE_CHANGE");
-      onFindMatch();
-    }, 1500);
   };
 
   // 1. Ramping up the Intensity
@@ -151,18 +169,23 @@ export const Home: React.FC<HomeProps> = ({ onFindMatch }) => {
           
           {/* LEFT COLUMN: Data Stack */}
           <aside className={styles.dataColumn}>
+
             {/* Top Card: Basic User Vitals */}
-            <motion.section 
-              initial={{ x: -20, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              className={styles.card}
-            >
-              <div className={styles.cardHeader}><Activity size={16}/> user_stats</div>
-              <div className={styles.rankedStats}>
-                <div className={styles.rankTier}>current_rank: gold_3</div>
-                <div className={styles.statLine}>avg_wpm: 104</div>
-              </div>
-            </motion.section>
+            {session && (
+              <motion.section 
+                initial={{ x: -20, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                className={styles.card}
+              >
+                <div className={styles.cardHeader}><Activity size={16}/> user_stats</div>
+                <div className={styles.rankedStats}>
+                  <div className={styles.rankTier}>operator: {session.username}</div>
+                  <div className={styles.rankTier}>current_rank: gold_3</div>
+                  <div className={styles.statLine}>avg_wpm: 104</div>
+                </div>
+              </motion.section>
+            )}
+            
 
             {/* Bottom Card: 10-Player Leaderboard */}
             <motion.section 

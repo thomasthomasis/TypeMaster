@@ -6,9 +6,9 @@ session:
   refresh_token_expiry_sec: 604800
 
 logger:
+  level: "debug"
   stdout: true
-  level: "info"
-  file: ""
+  format: "json"
 
 console:
   port: 7351
@@ -48,5 +48,5 @@ mail:
   host: "mailhog"
   port: 1025
   from_address: "noreply@typing99.com"
-  from_name: "Typig 99"
+  from_name: "Typing 99"
 

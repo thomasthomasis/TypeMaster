@@ -1,96 +1,142 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Github, Chrome, ShieldAlert, Zap } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus } from 'lucide-react';
+import { SiDiscord, SiGoogle } from 'react-icons/si';
 import { nakamaService } from '../../services/nakama';
 import styles from './Auth.module.css';
+import { generateCodeChallenge, generateCodeVerifier } from '../../utils/pcke';
+
+const clientId = import.meta.env.VITE_DISCORD_CLIENT_ID;
 
 interface AuthProps {
-  onAuthSuccess: (session: any) => void;
+  onAuthSuccess: () => void;
 }
 
 export const Auth: React.FC<AuthProps> = ({ onAuthSuccess }) => {
-  const [isRegister, setIsRegister] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
+
+    const [regEmail, setRegEmail] = useState('');
+    const [regEmailVerify, setRegEmailVerify] = useState('');
+    const [regPassword, setRegPassword] = useState('');
+    const [regPasswordVerify, setRegPasswordVerify] = useState('');
+    const [loginEmail, setLoginEmail] = useState('');
+    const [loginPassword, setLoginPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
+
+
+  const handleAuth = async (e: React.FormEvent, type: 'login' | 'register') => {
     e.preventDefault();
-    setError(null);
+    const email = type === 'login' ? loginEmail : regEmail;
+    const password = type === 'login' ? loginPassword : regPassword;
+    
     try {
-      const session = await nakamaService.authenticate(email, password, isRegister);
-      onAuthSuccess(session);
-
-      console.log(session)
-    } catch (err: any) {
-      setError(err.message || "AUTHENTICATION_FAILED");
+      await nakamaService.authenticateEmail(email, password, type === 'register');
+      // If rememberMe is false, we could handle token cleanup on tab close, 
+      // but Nakama's restoreSession handles most of this via LocalStorage anyway.
+      onAuthSuccess();
+    } catch (err) {
+      console.error(`${type.toUpperCase()}_FAILURE`, err);
     }
   };
 
-  const handleSocialLogin = (provider: 'google' | 'github') => {
-    console.log(`INITIATING_${provider.toUpperCase()}_HANDSHAKE`);
-    // Logic for window.location redirect to Nakama social provider endpoint
-  };
+  const handleDiscordLogin = async () => {
+    const verifier = generateCodeVerifier();
+    const challenge = await generateCodeChallenge(verifier);
 
-  return (
-    <div className={styles.authOverlay}>
-      <motion.div 
-        className={styles.authCard}
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-      >
-        <div className={styles.header}>
-          <ShieldAlert size={20} className={styles.iconGlow} />
-          <h2>{isRegister ? 'CREATE_NEW_NODE' : 'SYSTEM_ACCESS_REQUIRED'}</h2>
+    sessionStorage.setItem('discord_verifier', verifier);
+
+    const params = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: 'http://localhost:5173/auth/callback',
+        response_type: 'code', // We want a CODE, not a token
+        scope: 'identify email',
+        code_challenge: challenge,
+        code_challenge_method: 'S256'
+    })
+
+    window.location.href = `https://discord.com/api/oauth2/authorize?${params}`;
+  }
+
+ return (
+    <div className={styles.authPage}>
+      <div className={styles.splitWrapper}>
+        
+        {/* LEFT SIDE: REGISTER */}
+        <div className={styles.authSection}>
+          <div className={styles.sectionHeader}>
+            <UserPlus size={18} />
+            <span>register_account</span>
+          </div>
+          <form onSubmit={(e) => handleAuth(e, 'register')}>
+            <div className={styles.inputGroup}>
+              <Mail size={14} />
+              <input type="email" placeholder="email" value={regEmail} onChange={e => setRegEmail(e.target.value)} required />
+            </div>
+            <div className={styles.inputGroup}>
+              <Mail size={14} />
+              <input type="email_confirm" placeholder="verify_email" value={regEmailVerify} onChange={e => setRegEmailVerify(e.target.value)} required />
+            </div>
+            <div className={styles.inputGroup}>
+              <Lock size={14} />
+              <input type="password" placeholder="password" value={regPassword} onChange={e => setRegPassword(e.target.value)} required />
+            </div>
+            <div className={styles.inputGroup}>
+              <Lock size={14} />
+              <input type="password" placeholder="verify_password" value={regPasswordVerify} onChange={e => setRegPasswordVerify(e.target.value)} required />
+            </div>
+            <button type="submit" className={styles.actionBtn} disabled>
+              <UserPlus size={16} /> register
+            </button>
+          </form>
         </div>
 
-        {error && <div className={styles.errorMsg}>!! {error}</div>}
+        <div className={styles.verticalDivider} />
 
-        <form onSubmit={handleEmailAuth} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <Mail size={16} />
-            <input 
-              type="email" 
-              placeholder="EMAIL / USERNAME" 
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required 
-            />
-          </div>
-          <div className={styles.inputGroup}>
-            <Lock size={16} />
-            <input 
-              type="password" 
-              placeholder="PASSWORD" 
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required 
-            />
+        {/* RIGHT SIDE: LOGIN */}
+        <div className={styles.authSection}>
+          <div className={styles.sectionHeader}>
+            <LogIn size={18} />
+            <span>login</span>
           </div>
           
-          <button type="submit" className={styles.primaryBtn}>
-            <Zap size={16} /> {isRegister ? 'INITIALIZE_ACCOUNT' : 'GRANT_ACCESS'}
-          </button>
-        </form>
-
-        <div className={styles.divider}><span>OR_EXTERNAL_PROVERS</span></div>
-
-        <div className={styles.socialGrid}>
-          <button onClick={() => handleSocialLogin('google')} className={styles.socialBtn}>
-            <Chrome size={18} /> GOOGLE
-          </button>
-          <button onClick={() => handleSocialLogin('github')} className={styles.socialBtn}>
-            <Github size={18} /> GITHUB
-          </button>
+          <div className={styles.socialFooter}>
+            <button className={styles.socialIconBtn} onClick={() => handleDiscordLogin()}>
+            <SiDiscord size={20} />
+            </button>
+            <button className={styles.socialIconBtn}>
+            <SiGoogle size={20} />
+            </button>
         </div>
+          <form onSubmit={(e) => handleAuth(e, 'login')}>
+            <div className={styles.inputGroup}>
+              <Mail size={14} />
+              <input type="email" placeholder="email" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} required />
+            </div>
+            <div className={styles.inputGroup}>
+              <Lock size={14} />
+              <input type="password" placeholder="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} required />
+            </div>
+            
+            <div className={styles.formFooter}>
+              <label className={styles.checkboxContainer}>
+                <input type="checkbox" checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />
+                <span className={styles.customCheck}></span>
+                <span className={styles.labelTitle}>
+                    remember_me
+                </span>
+              </label>
+              <button type="submit" className={styles.actionBtn}>
+                <LogIn size={16} /> login
+              </button>
+              <p className={styles.forgotBtn}>
+                forgot_password_?
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
 
-        <button 
-          className={styles.toggleBtn}
-          onClick={() => setIsRegister(!isRegister)}
-        >
-          {isRegister ? 'ALREADY_HAVE_ACCESS?_LOGIN' : 'NEW_IDENTIFIER?_REGISTER'}
-        </button>
-      </motion.div>
+      {/* SOCIAL FOOTER */}
+      
     </div>
   );
 };

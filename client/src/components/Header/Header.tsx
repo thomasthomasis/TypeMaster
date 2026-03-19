@@ -1,45 +1,87 @@
 import React, { useState } from 'react';
-import { LogIn, User } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { LogIn, User, ChevronDown, ShieldAlert } from 'lucide-react';
+import type { RootState } from '../../store/store';
+import { clearAuth } from '../../store/authSlice';
 import styles from './Header.module.css';
-import { Client, Session } from "@heroiclabs/nakama-js";
 
-interface HeaderProps {
-  onNavigate: (phase: any) => void;
-  currentPhase: string;
-  session: Session | null;
-  username?: string;
-  onLogout: () => void;
-}
-
-export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPhase, session, username, onLogout }) => {
+export const Header: React.FC = () => {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // SELECTORS: Pluck exactly what we need from Redux
+  const { session, isGuest } = useSelector((state: RootState) => state.auth);
+  const username = session?.username || "guest_user";
 
   const handleLogout = () => {
+    // 1. Wipe Redux state
+    dispatch(clearAuth());
+    // 2. Wipe LocalStorage
     localStorage.removeItem("nakama_token");
     localStorage.removeItem("nakama_refresh_token");
-    onLogout();
+    // 3. Kick to Home
+    navigate('/');
+    setIsDropdownOpen(false);
+  };
+
+  // Helper for clean NavLink classes
+  const getNavClass = ({ isActive }: { isActive: boolean}) => {
+    return `${styles.navBtn} ${isActive ? styles.active : ''}`;
   }
   
   return (
     <nav className={styles.header}>
-      <div className={styles.logo} onClick={() => onNavigate('HOME')}>
-        <span>typing_99</span>
+      {/* Logo now links to root */}
+      <NavLink to="/" className={styles.logo}>
+        <span>type_master</span>
         <span className={styles.versionBadge}>v1.0.4_STABLE</span>
-      </div>
+      </NavLink>
 
       <div className={styles.navLinks}>
-        <button 
-          className={`${styles.navBtn} ${currentPhase === 'RANKED' ? styles.active : ''}`}
-          onClick={() => onNavigate('RANKED')}
-        >
-          ranked_mode
-        </button>
+        <NavLink to="/" className={getNavClass} end>
+          home_page
+        </NavLink>
+
+        <NavLink to="/typing-test" className={getNavClass}>
+          typing_test
+        </NavLink>
+
+        <NavLink to="/game-modes" className={getNavClass}>
+          game_modes
+        </NavLink>
+
+        <NavLink to="/global-intel" className={getNavClass}>
+          global_intel
+        </NavLink>
       </div>
 
       <div className={styles.authSlot}>
-        {session ? (
-          /* WRAPPER FOR HOVER LOGIC */
+        {/* not authenticated at all */}
+        {!session && (
+          <NavLink to="/login" className={styles.loginBtn}>
+            <LogIn size={16} />
+            <span>login</span>
+          </NavLink>
+        )}
+
+        {/* guest authenticated (Show both ID and Link option) */}
+        {session && isGuest && (
+          <div className={styles.guestContainer}>
+            <div className={styles.guestBadge}>
+              <ShieldAlert size={14} />
+              <span>guets_mode</span>
+            </div>
+            <NavLink to="/login" className={styles.saveBtn}>
+              [ save_progress ]
+            </NavLink>
+          </div>
+        )}
+        
+        {/* Actual authentication (Standard Profile) */}
+        {session && !isGuest && (
           <div 
             className={styles.userWrapper}
             onMouseEnter={() => setIsDropdownOpen(true)}
@@ -47,36 +89,31 @@ export const Header: React.FC<HeaderProps> = ({ onNavigate, currentPhase, sessio
           >
             <div className={`${styles.navBtn} ${styles.userProfileBtn}`}>
               <User size={16} color="var(--voltage-green)" />
-              <span>{username || " "}</span>
+              <span>{username}</span>
+              <ChevronDown size={12} className={isDropdownOpen ? styles.rotate : ''} />
             </div>
 
-            {/* THE DROPDOWN MENU */}
             {isDropdownOpen && (
               <div className={styles.dropdown}>
-                <button onClick={() => onNavigate('PROFILE')}>
+                {/* Dropdown items use NavLink for internal routing */}
+                <NavLink to="/profile" onClick={() => setIsDropdownOpen(false)}>
                   [01] player_profile
-                </button>
-                <button onClick={() => onNavigate('FRIENDS')}>
+                </NavLink>
+                <NavLink to="/friends" onClick={() => setIsDropdownOpen(false)}>
                   [02] friends
-                </button>
-                <button onClick={() => onNavigate('SETTINGS')}>
+                </NavLink>
+                <NavLink to="/settings" onClick={() => setIsDropdownOpen(false)}>
                   [03] account_settings
-                </button>
+                </NavLink>
+                
                 <div className={styles.dropDivider} />
+                
                 <button onClick={handleLogout} className={styles.logoutBtn}>
                   [04] logout
                 </button>
               </div>
             )}
           </div>
-        ) : (
-          <button 
-            className={styles.loginBtn} 
-            onClick={() => onNavigate('LOGIN')}
-          >
-            <LogIn size={16} />
-            <span>login</span>
-          </button>
         )}
       </div>
     </nav>

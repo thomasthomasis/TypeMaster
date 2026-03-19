@@ -1,113 +1,113 @@
 import React, { useEffect, useState } from 'react';
-import { AnimatePresence, resolveElements } from 'framer-motion';
+import { useDispatch } from 'react-redux';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+
 import { BootLoader } from './components/BootLoader/BootLoader';
 import { Home } from './components/Home/Home';
-import { MatchFound } from './components/MatchFound/MatchFound';
-import { RankedTier } from './components/RankedTier/RankedTier';
 import { FriendList } from './components/FriendList/FriendLIst';
 import { Profile } from './components/Profile/Profile';
 import { Header } from './components/Header/Header';
 import { Auth } from './components/Auth/Auth';
+import { DiscordCallback } from './components/DiscordCallback/DiscordCallback';
 
-import { Session } from "@heroiclabs/nakama-js"; // For the Type
 import { nakamaService } from './services/nakama';
+import { setAuth, clearAuth } from './store/authSlice';
+import { useAuth } from './hooks/useAuth';
 
 // import { Battle } from './components/Battle/Battle;'
 import './styles/variables.css';
-import './App.css';
+import styles from './App.module.css';
 
 
-type SystemPhase = 'HOME' | 'MATCHING' | 'BATTLE' | 'RANKED' | 'FRIENDS' | 'PROFILE' | 'LOGIN';
+export type SystemPhase = 'HOME' | 'MATCHING' | 'BATTLE' | 'TYPING_TEST' | 'GAME_MODES' | 'GLOBAL_INTEL' | 'LOGIN' | 'PROFILE' | 'FRIENDS' | 'SETTINGS';
 
 const App: React.FC = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [userAccount, setUserAccount] = useState<any>(null);
 
-  const [isBooted, setIsBooted] = useState<boolean>(false);
-  const [phase, setPhase] = useState<SystemPhase>('HOME');
-
-  const handleAuthSuccess = (newSession: Session) => {
-    setSession(newSession);
-    setPhase('HOME'); // Redirect back to lobby after successful login
-  };
-
-  const handleLogout = () => {
-    setSession(null);
-    setUserAccount(null);
-    setPhase('HOME');
-  };
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isAuthenticated, session } = useAuth();
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const restored = nakamaService.restoreSession();
-
-      if(!restored) {
-        console.log("No session found.")
-        return;
-      }
-
+    const bootSequence = async () => {
+      setIsInitializing(true);
       try {
-        // 2. Manual JWT Validation (replacing .isexpired)
-        const payload = JSON.parse(atob(restored.token.split('.')[1]));
-        const isExpired = Date.now() >= (payload.exp * 1000 - 10000);
-
-        if (isExpired) {
-          console.warn("session expired.");
-          localStorage.removeItem("nakama_token");
-          localStorage.removeItem("nakama_refresh_token");
-          setSession(null);
-          return;
-        }
-
-        // 3. Session is valid -> Fetch Account Data
-        console.log("SESSION_VERIFIED // SYNCING_NODE_DATA...");
-        setSession(restored);
+        const restored = await nakamaService.restoreSession();
         
-        const account = await nakamaService.getAccount(restored);
-        setUserAccount(account.user);
-        if(account.user) {
-           console.log(`WELCOME_BACK // ${account.user.username}`);
-        }
-       
+        if (restored) {
+          const payload = JSON.parse(atob(restored.token.split('.')[1]));
+          const isExpired = Date.now() >= (payload.exp * 1000 - 10000);
 
+          if (!isExpired) {
+            // Here, we need to know if the restored session was a guest
+            // If you store 'is_guest' in localStorage during login, check it here
+            const wasGuest = localStorage.getItem("is_guest") === "true";
+            dispatch(setAuth({ session: restored, isGuest: wasGuest }));
+          } else {
+            dispatch(clearAuth());
+          }
+        } else {
+          // Do not call authenticateGuest() here. 
+          // Leave the user unauthenticated so they see the clean Landing Page.
+          dispatch(clearAuth()); 
+        }
       } catch (err) {
-        console.error("AUTH_SYNC_ERROR // EMERGENCY_LOGOUT", err);
-        setSession(null);
+        dispatch(clearAuth());
+      } finally {
+        setIsInitializing(false);
       }
-    }
-    initAuth();
-  }, [])
+  };
+
+  bootSequence();
+}, [dispatch]);
+
+  if(isInitializing) {
+    return <BootLoader key="loader" onBootComplete={() => {}} />;
+  }
+ 
   
   return (
-    <div className="app-container">
-      <AnimatePresence mode="wait">
-        {!isBooted ? (
-          <BootLoader 
-            key="loader" 
-            onBootComplete={() => setIsBooted(true)} 
-          />
-        ) : (
-          <>
-            <Header 
-              onNavigate={(newPhase: SystemPhase) => setPhase(newPhase)} 
-              currentPhase={phase}
-              session={session}
-              username={session?.username || "UNAUTHORIZED_NODE"}
-              onLogout={handleLogout}
+      <div className={styles.appWrapper}>
+        <Header />
+
+        <main className={styles.viewport}>
+          <Routes>
+            {/* PUBLIC ROUTES */}
+            <Route path="/auth/callback" element={<DiscordCallback />} />
+            
+            {/* AUTH PROTECTION LOGIC */}
+            <Route 
+              path="/login" 
+              element={!isAuthenticated ? <Auth onAuthSuccess={() => {}} /> : <Navigate to="/" />} 
             />
-            <main className="system-viewport">
-                {phase === 'HOME' && <Home onFindMatch={() => setPhase('MATCHING')} />}
-                {phase === 'LOGIN' && <Auth onAuthSuccess={handleAuthSuccess} />}
-                {phase === 'MATCHING' && <MatchFound onMatchLocked={() => setPhase('BATTLE')} />}
-                {phase === 'RANKED' && <RankedTier />}
-                {phase === 'FRIENDS' && <FriendList />}
-                {phase === 'PROFILE' && <Profile />}
-            </main>
-          </>
-         
-        )}
-      </AnimatePresence>
-    </div>
+
+            {/* PROTECTED ROUTES */}
+            <Route 
+              path="/" 
+              element={<Home onFindMatch={() => navigate('/matchmaking')} />} 
+            />
+            
+            <Route 
+              path="/profile" 
+              element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} 
+            />
+            
+            <Route 
+              path="/friends" 
+              element={isAuthenticated ? <FriendList /> : <Navigate to="/login" />} 
+            />
+
+            {/* FALLBACK */}
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </main>
+
+        <footer className={styles.terminalFooter}>
+          <span>status: {isAuthenticated ? 'user_authenticated' : 'guest_access'} // </span>
+          <span>latency: 24ms</span>
+        </footer>
+      </div>
   );
 };
 

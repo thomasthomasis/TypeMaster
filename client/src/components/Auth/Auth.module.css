@@ -1,37 +1,49 @@
-.authOverlay {
+.authPage {
+
+    height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.4s ease-out;
+}
+
+.splitWrapper {
+  display: flex;
+  gap: 120px;
+  background: transparent;
+}
+
+.authSection {
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sectionHeader {
   display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 80vh;
-}
-
-.authCard {
-  width: 100%;
-  max-width: 400px;
-  background: rgba(0, 0, 0, 0.95);
-  border: 1px solid #222;
-  border-top: 4px solid var(--voltage-green);
-  padding: 40px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.header h2 {
-  font-size: 0.9rem;
+  gap: 10px;
   color: var(--voltage-green);
-  letter-spacing: 2px;
-  margin: 15px 0 30px;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+.verticalDivider {
+  width: 1px;
+  background: #404045;
 }
 
 .inputGroup {
   display: flex;
   align-items: center;
-  gap: 15px;
-  background: #080808;
-  border: 1px solid #222;
-  padding: 12px 15px;
-  margin-bottom: 15px;
-  transition: border-color 0.2s;
+  background: #161618;
+  padding: 10px 15px;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: 0.2s;
 }
 
 .inputGroup:focus-within {
@@ -42,57 +54,131 @@
   background: transparent;
   border: none;
   color: #fff;
-  width: 100%;
+  margin-left: 10px;
   outline: none;
-  font-size: 0.8rem;
-}
-
-.primaryBtn {
   width: 100%;
-  padding: 15px;
-  background: var(--voltage-green);
-  color: #000;
+}
+
+.actionBtn , .socialIconBtn {
+  width: 100%;
+  background: #2a2a2c;
+  color: #fff;
   border: none;
-  font-weight: 900;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 10px;
-  text-transform: lowercase;
-}
-
-.socialGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-  margin: 20px 0;
-}
-
-.socialBtn {
-  background: #111;
-  border: 1px solid #333;
-  color: #888;
-  padding: 10px;
-  cursor: pointer;
+  padding: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 0.7rem;
+  cursor: pointer;
+  transition: 0.2s;
 }
 
-.socialBtn:hover {
-  border-color: #fff;
-  color: #fff;
+.actionBtn:hover, .socialIconBtn:hover {
+  background: var(--voltage-green);
+  color: #000;
 }
 
-.errorMsg {
-  color: #ff4444;
-  background: rgba(255, 68, 68, 0.1);
-  padding: 10px;
-  font-size: 0.7rem;
-  margin-bottom: 20px;
-  border-left: 2px solid #ff4444;
+.formFooter {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
 }
+
+
+.checkboxContainer {
+
+    width: 100%;
+    height: 40px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 5px;
+    font-size: 1rem;
+    
+    cursor: pointer;
+}
+
+.checkboxContainer input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.customCheck {
+  height: 18px;
+  width: 18px;
+  background-color: transparent;
+  border: 1px solid #333; /* Dim border when unchecked */
+  border-radius: 2px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* On hover, dim green border */
+.checkboxContainer:hover input ~ .customCheck {
+  border-color: rgba(0, 255, 102, 0.5);
+}
+
+/* When checked: Neon Green Border + Neon Green Background */
+.checkboxContainer input:checked ~ .customCheck {
+  background-color: var(--voltage-green);
+  border-color: var(--voltage-green);
+  box-shadow: 0 0 8px var(--voltage-green); /* The Neon Glow */
+}
+
+/* The Tick (Hidden by default) */
+.customCheck::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid #000; /* Black tick */
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Show the tick when checked */
+.checkboxContainer input:checked ~ .customCheck::after {
+  display: block;
+}
+
+.labelTitle {
+  transition: color 0.2s;
+}
+
+.checkboxContainer input:checked ~ .labelTitle {
+  color: var(--voltage-green);
+}
+
+.socialFooter {
+  display: flex;
+  gap: 20px;
+}
+
+.forgotBtn {
+    width: 100%;
+
+    display: flex;
+    justify-content: flex-end;
+
+    margin: 0;
+    margin-top: 10px;
+
+    color: #a3a3a3;
+    font-size: 0.75rem;
+
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.forgotBtn:hover {
+    color: #c6c6c6;
+}
+

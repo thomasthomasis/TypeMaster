@@ -49,6 +49,11 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return nil
 	}
 
+	if err := initializer.RegisterRpc("exchange_discord_code", rpcExchangeDiscordCode); err != nil {
+		logger.Error("Unable to reigster rpc: %v", err)
+		return err
+	}
+
 	// Leaderboards (Ranked Mode)
 	// Setup seasonal or global rankings.
 	if err := InitLeaderboards(ctx, nk, logger); err != nil {
