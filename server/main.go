@@ -10,6 +10,7 @@ import (
 type config struct {
 	SMTPHost, SMTPPort, SMTPFrom, SMTPUser, SMTPPass         string
 	DiscordClientID, DiscordClientSecret, DiscordRedirectURI string
+	GuestInactiveDays, GuestCleanupDryRun string
 }
 
 var cfg config
@@ -26,6 +27,8 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		DiscordClientID:     env["DISCORD_CLIENT_ID"],
 		DiscordClientSecret: env["DISCORD_CLIENT_SECRET"],
 		DiscordRedirectURI:  env["DISCORD_REDIRECT_URI"],
+		GuestInactiveDays:   env["GUEST_INACTIVE_DAYS"],
+		GuestCleanupDryRun:  env["GUEST_CLEANUP_DRY_RUN"],
 	}
 
 	// Auth hooks
@@ -65,6 +68,7 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		return err
 	}
 
+	startGuestCleanup(logger, db, nk)
 	logger.Info("TypeMaster module loaded")
 	return nil
 }
