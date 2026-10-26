@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Navigate } from 'react-router'
+import { Link, Navigate } from 'react-router'
 import { useAuthStore, needsVerification } from '../store/useAuthStore'
 import { useAsyncAction } from '../components/useAsyncAction'
 
@@ -27,7 +27,7 @@ export default function VerifyEmail() {
   return (
     <div className="panel">
       <h1>&gt; verify email_</h1>
-      <p className="muted">We sent a 6-digit code to {account?.email}.</p>
+      <p className="muted">We sent a 6-digit code to {account?.email}. Verifying unlocks ranked.</p>
 
       <form onSubmit={onSubmit}>
         <input
@@ -50,6 +50,7 @@ export default function VerifyEmail() {
       <button disabled={busy} onClick={onResend}>
         resend code
       </button>
+        <Link to="/">skip for now</Link>
       <button onClick={logout}>sign out</button>
     </div>
   )

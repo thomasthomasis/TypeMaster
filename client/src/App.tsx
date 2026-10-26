@@ -8,6 +8,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import DiscordCallback from './pages/DiscordCallback'
 import Account from './pages/Account'
 import Home from './pages/Home'
+import ChooseUsername from './pages/ChooseUsername'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
           </Route>
+          <Route path="/choose-username" element={<ChooseUsername />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/auth/discord/callback" element={<DiscordCallback />} />
           <Route element={<RequireAuth />}>

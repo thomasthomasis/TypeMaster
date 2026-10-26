@@ -8,7 +8,6 @@ export default function Login() {
   const [mode, setMode] = useState<'signin' | 'register'>('signin')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [username, setUsername] = useState('')
   const { loginEmail, registerEmail, loginGuest } = useAuthStore()
   const { busy, error, run } = useAsyncAction()
 
@@ -16,7 +15,7 @@ export default function Login() {
   function onSubmit(e: FormEvent) {
     e.preventDefault()
     run(() =>
-      mode === 'signin' ? loginEmail(email, password) : registerEmail(email, password, username),
+      mode === 'signin' ? loginEmail(email, password) : registerEmail(email, password),
     )
   }
 
@@ -34,9 +33,6 @@ export default function Login() {
       </div>
 
       <form onSubmit={onSubmit}>
-        {mode === 'register' && (
-          <input placeholder="username (optional)" value={username} onChange={(e) => setUsername(e.target.value)} />
-        )}
         <input type="email" placeholder="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
         <input
           type="password"

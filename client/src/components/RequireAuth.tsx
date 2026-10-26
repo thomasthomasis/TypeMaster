@@ -1,7 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router'
-import { useAuthStore, needsVerification } from '../store/useAuthStore'
+import { useAuthStore, hasChosenUsername } from '../store/useAuthStore'
 
-// Wrap routes that need a signed-in, verified player.
+// Wrap routes that need a signed-in player who has picked a username.
 export function RequireAuth() {
   const status = useAuthStore((s) => s.status)
   const account = useAuthStore((s) => s.account)
@@ -9,7 +9,7 @@ export function RequireAuth() {
 
   if (status === 'loading') return <p className="muted">&gt; connecting...</p>
   if (status === 'signedOut') return <Navigate to="/login" replace state={{ from: location }} />
-  if (needsVerification(account)) return <Navigate to="/verify-email" replace />
+  if (!hasChosenUsername(account)) return <Navigate to="/choose-username" replace />
   return <Outlet />
 }
 

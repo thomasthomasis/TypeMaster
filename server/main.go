@@ -32,6 +32,15 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	}
 
 	// Auth hooks
+	if err := initializer.RegisterBeforeAuthenticateDevice(beforeAuthDevice); err != nil {
+		return err
+	}
+	if err := initializer.RegisterBeforeAuthenticateEmail(beforeAuthEmail); err != nil {
+		return err
+	}
+	if err := initializer.RegisterBeforeUpdateAccount(beforeUpdateAccount); err != nil {
+		return err
+	}
 	if err := initializer.RegisterAfterAuthenticateDevice(afterAuthDevice); err != nil {
 		return err
 	}
@@ -67,6 +76,11 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err := initializer.RegisterRpc("reset_password", rpcResetPassword); err != nil {
 		return err
 	}
+	if err := initializer.RegisterRpc("set_username", rpcSetUsername); err != nil {
+		return err
+	}
+
+	ensureUsernameIndex(ctx, logger, db)
 
 	startGuestCleanup(logger, db, nk)
 	logger.Info("TypeMaster module loaded")

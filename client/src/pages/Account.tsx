@@ -1,28 +1,34 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
-import { useAuthStore, isGuest, hasDiscord } from '../store/useAuthStore'
+import { Link, useNavigate } from 'react-router'
+import { useAuthStore, isGuest, hasDiscord, canPlayRanked } from '../store/useAuthStore'
 import { useAsyncAction } from '../components/useAsyncAction'
+import { UsernameForm } from '../components/UsernameForm'
 import { discordEnabled, startDiscordAuth } from '../lib/discord'
 
 export default function Account() {
   const { account, linkEmail, logout } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [renaming, setRenaming] = useState(false)
   const { busy, error, run } = useAsyncAction()
+  const navigate = useNavigate()
   const guest = isGuest(account)
 
-  // On success the account gains an email, and RequireAuth sends us to /verify-email.
-  function onLinkEmail(e: FormEvent) {
+  // A newly linked email needs its code before it unlocks ranked.
+  async function onLinkEmail(e: FormEvent) {
     e.preventDefault()
-    run(() => linkEmail(email, password))
+    if (await run(() => linkEmail(email, password))) navigate('/verify-email')
   }
 
   return (
     <div className="panel">
       <h1>&gt; account_</h1>
       <p>
-        user: <strong>{account?.user?.display_name || account?.user?.username}</strong>
+        user: <strong>{account?.user?.username}</strong>{' '}
+        <button onClick={() => setRenaming(!renaming)}>{renaming ? 'cancel' : 'change'}</button>
       </p>
+      {renaming && <UsernameForm submitLabel="save username" onDone={() => setRenaming(false)} />}
+      <p className="muted">ranked: {canPlayRanked(account) ? 'unlocked' : 'locked'}</p>
       <p className="muted">
         {guest ? 'guest account (inactive guests are removed after 30 days)' : ''}
         {account?.email ? `email: ${account.email}` : ''}

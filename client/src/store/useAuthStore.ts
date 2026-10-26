@@ -21,7 +21,7 @@ interface AuthState {
 
   loginGuest: () => Promise<void>
   loginEmail: (email: string, password: string) => Promise<void>
-  registerEmail: (email: string, password: string, username: string) => Promise<void>
+  registerEmail: (email: string, password: string) => Promise<void>
   loginDiscord: (code: string) => Promise<void>
 
   linkEmail: (email: string, password: string) => Promise<void>
@@ -31,6 +31,8 @@ interface AuthState {
   resendVerification: () => Promise<void>
   requestPasswordReset: (email: string) => Promise<void>
   resetPassword: (email: string, code: string, password: string) => Promise<void>
+
+  setUsername: (username: string) => Promise<void>
 
   logout: () => Promise<void>
 }
@@ -126,8 +128,8 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       await signIn(await nakama.authenticateEmail(email, password, false))
     },
 
-    registerEmail: async (email, password, username) => {
-      await signIn(await nakama.authenticateEmail(email, password, true, username || undefined))
+    registerEmail: async (email, password) => {
+      await signIn(await nakama.authenticateEmail(email, password, true))
     },
 
     loginDiscord: async (code) => {
@@ -168,6 +170,12 @@ export const useAuthStore = create<AuthState>()((set, get) => {
       await rpcPublic('reset_password', { email, code, password })
     },
 
+    setUsername: async (username) => {
+        const session = await get().ensureSession()
+        await nakama.rpc(session, 'set_username', { username })
+        await get().refreshAccount()
+    },
+
     logout: async () => {
       const { session } = get()
       if (session) {
@@ -193,13 +201,29 @@ export function hasDiscord(account: ApiAccount | null): boolean {
   return !!account?.custom_id?.startsWith('discord:')
 }
 
-export function isEmailVerified(account: ApiAccount | null): boolean {
+function metadata(account: ApiAccount | null): Record<string, unknown> {
   try {
-    return JSON.parse(account?.user?.metadata || '{}').email_verified === true
+    return JSON.parse(account?.user?.metadata || '{}')
   } catch {
-    return false
+    return {}
   }
 }
+
+export function isEmailVerified(account: ApiAccount | null): boolean {
+  return metadata(account).email_verified === true
+}
+
+// False until the player has picked a username with set_username.
+export function hasChosenUsername(account: ApiAccount | null): boolean {
+  return metadata(account).username_set === true
+}
+
+// Mirrors canPlayRanked on the server, which is what actually enforces it.
+export function canPlayRanked(account: ApiAccount | null): boolean {
+  return hasDiscord(account) || (!!account?.email && isEmailVerified(account))
+}
+
+export const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,16}$/
 
 // An email account that hasn't entered its code yet.
 export function needsVerification(account: ApiAccount | null): boolean {
