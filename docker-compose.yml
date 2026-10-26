@@ -14,17 +14,32 @@ services:
     build: ./server
     depends_on:
       postgres: { condition: service_healthy }
+    environment:
+      NAKAMA_HTTP_KEY: ${NAKAMA_HTTP_KEY:-defaulthttpkey}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-http://localhost:5173/auth/discord/callback}
     entrypoint:
       - /bin/sh
-      - -ecx
+      - -ec
       - >
         /nakama/nakama migrate up --database.address postgres:localdb@postgres:5432/nakama &&
-        exec /nakama/nakama --name typemaster --database.address postgres:localdb@postgres:5432/nakama
-        --logger.level DEBUG --session.token_expiry_sec 7200
+        exec /nakama/nakama --name typemaster
+        --database.address postgres:localdb@postgres:5432/nakama
+        --logger.level DEBUG
+        --session.token_expiry_sec 7200
+        --session.refresh_token_expiry_sec 2592000
+        --runtime.http_key "$$NAKAMA_HTTP_KEY"
+        --runtime.env "SMTP_HOST=mailpit"
+        --runtime.env "SMTP_PORT=1025"
+        --runtime.env "SMTP_FROM=noreply@typemaster.local"
+        --runtime.env "DISCORD_CLIENT_ID=$$DISCORD_CLIENT_ID"
+        --runtime.env "DISCORD_CLIENT_SECRET=$$DISCORD_CLIENT_SECRET"
+        --runtime.env "DISCORD_REDIRECT_URI=$$DISCORD_REDIRECT_URI"
     ports: ["7349:7349", "7350:7350", "7351:7351"]
 
-  mailhog:
-    image: mailhog/mailhog
+  mailpit:
+    image: axllent/mailpit
     ports: ["1025:1025", "8025:8025"]
 
 volumes:
