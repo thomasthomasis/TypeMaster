@@ -1,9 +1,6 @@
 package main
 
-import (
-	"math/rand/v2"
-	"strings"
-)
+import "strings"
 
 // A starter word list. Swap in a bigger one (or several by difficulty) later.
 var wordList = strings.Fields(`
@@ -25,12 +22,3 @@ person money serve appear road map rain rule govern pull cold notice voice unit 
 town fine certain fly fall lead cry dark machine note wait plan figure star box noun
 field rest correct able pound done beauty drive stood contain front teach week final
 `)
-
-// generateText returns n random words separated by single spaces.
-func generateText(rng *rand.Rand, n int) string {
-	words := make([]string, n)
-	for i := range words {
-		words[i] = wordList[rng.IntN(len(wordList))]
-	}
-	return strings.Join(words, " ")
-}

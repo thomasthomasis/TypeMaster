@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"math/rand/v2"
 	"sort"
-	"unicode/utf8"
 
 	"github.com/heroiclabs/nakama-common/runtime"
 )
@@ -15,25 +14,27 @@ const (
 	matchModule      = "typing99"
 	tickRate         = 10 // loop runs 10 times a second
 	countdownSeconds = 3
-	raceWordCount    = 30
-	maxKeysPerTick   = 30                // 300 keys/sec, far above any human
-	raceTimeLimit    = 3 * 60 * tickRate // ticks
-	emptyMatchTicks  = 30 * tickRate     // close a match 30s after everyone leaves
-	resultsTicks     = 10 * tickRate     // keep a finished match open 10s for the results screen
+	emptyMatchTicks  = 30 * tickRate // close a match 30s after everyone leaves
+	resultsTicks     = 10 * tickRate // keep a finished match open 10s for the results screen
+	progressEvery    = 2             // broadcast everyone's progress every 2 ticks (5/sec)
 )
 
 // Op codes. Client -> server:
 const (
-	opKeys  int64 = 1 // data: the characters typed, as raw UTF-8 (no JSON)
-	opStart int64 = 2 // host starts a private match
+	opKeys   int64 = 1 // data: the characters typed, as raw UTF-8 (no JSON)
+	opStart  int64 = 2 // host starts a private match
+	opAction int64 = 3 // data: "attack", "shield" or "target"
 )
 
 // Server -> client (JSON):
 const (
 	opLobby    int64 = 10 // players, host, phase
-	opGameInit int64 = 11 // the text and countdown
-	opProgress int64 = 12 // everyone's position, sent when anything changed
-	opGameOver int64 = 13 // final results
+	opGameInit int64 = 11 // countdown
+	opProgress int64 = 12 // storm + everyone's public state
+	opGameOver int64 = 13 // final results with stats
+	opText     int64 = 14 // private: words appended / garbage inserted into your text
+	opSelf     int64 = 15 // private: your cursor, meter, shields, hp...
+	opEvent    int64 = 16 // attacks and eliminations
 )
 
 type phase string
@@ -45,31 +46,22 @@ const (
 	phaseFinished  phase = "finished"
 )
 
-type player struct {
-	presence  runtime.Presence
-	UserID    string `json:"id"`
-	Username  string `json:"username"`
-	Connected bool   `json:"connected"`
-	Pos       int    `json:"pos"`    // characters typed correctly
-	Errors    int    `json:"errors"` // wrong keystrokes
-	Place     int    `json:"place,omitempty"`
-	TimeMs    int64  `json:"time_ms,omitempty"` // time to finish
-}
-
 type matchState struct {
-	mode          gameMode
-	private       bool
-	code          string
-	hostID        string
-	phase         phase
-	players       map[string]*player
-	order         []string // join order, so lists stay stable
-	text          []rune
-	startTick     int64 // tick when typing begins
-	endTick       int64 // tick when the match closes after results
-	finishedCount int
-	emptyTicks    int64
-	dirty         bool // progress changed since the last broadcast
+	mode       gameMode
+	private    bool
+	code       string
+	hostID     string
+	phase      phase
+	players    map[string]*player
+	order      []string // join order, so lists stay stable
+	rng        *rand.Rand
+	words      []string // the shared word stream every player types through
+	startTick  int64    // tick when typing begins
+	endTick    int64    // tick when the match closes after results
+	storm      float64  // storm position, in base-text characters
+	stormSpeed float64  // characters per second
+	lobbyCPS   float64  // median live speed of players still alive
+	emptyTicks int64
 }
 
 type typingMatch struct{}
@@ -94,7 +86,7 @@ func (s *matchState) label() string {
 func (s *matchState) presences() []runtime.Presence {
 	out := make([]runtime.Presence, 0, len(s.players))
 	for _, p := range s.players {
-		if p.Connected {
+		if p.Connected && !p.Bot {
 			out = append(out, p.presence)
 		}
 	}
@@ -112,8 +104,18 @@ func (s *matchState) playerList() []*player {
 }
 
 func broadcast(d runtime.MatchDispatcher, op int64, v any, to []runtime.Presence) {
+	if len(to) == 0 {
+		return
+	}
 	b, _ := json.Marshal(v)
 	_ = d.BroadcastMessage(op, b, to, nil, true)
+}
+
+// sendTo sends a private message to one player, if they're connected.
+func sendTo(d runtime.MatchDispatcher, p *player, op int64, v any) {
+	if p.Connected && !p.Bot {
+		broadcast(d, op, v, []runtime.Presence{p.presence})
+	}
 }
 
 func (s *matchState) sendLobby(d runtime.MatchDispatcher) {
@@ -123,30 +125,46 @@ func (s *matchState) sendLobby(d runtime.MatchDispatcher) {
 		"code":    s.code,
 		"host":    s.hostID,
 		"phase":   s.phase,
-		"players": s.playerList(),
+		"players": s.publicList(),
 	}, s.presences())
 }
 
-// results: finishers by place, then everyone else by how far they got.
-func (s *matchState) results() []*player {
+func (s *matchState) publicList() []playerView {
 	list := s.playerList()
-	sort.SliceStable(list, func(i, j int) bool {
-		a, b := list[i], list[j]
-		if (a.Place > 0) != (b.Place > 0) {
-			return a.Place > 0
-		}
-		if a.Place > 0 {
-			return a.Place < b.Place
-		}
-		return a.Pos > b.Pos
-	})
-	return list
+	out := make([]playerView, len(list))
+	for i, p := range list {
+		out[i] = p.view()
+	}
+	return out
 }
 
+func (s *matchState) aliveCount() int {
+	n := 0
+	for _, p := range s.players {
+		if p.Alive {
+			n++
+		}
+	}
+	return n
+}
+
+// finish: survivors share 1st (normally just the winner), then by elimination order.
 func (s *matchState) finish(d runtime.MatchDispatcher, tick int64) {
+	for _, p := range s.players {
+		if p.Alive {
+			p.Place = 1
+		}
+	}
+	list := s.playerList()
+	sort.SliceStable(list, func(i, j int) bool { return list[i].Place < list[j].Place })
+	results := make([]playerResult, len(list))
+	for i, p := range list {
+		results[i] = p.result()
+	}
+
 	s.phase = phaseFinished
 	s.endTick = tick + resultsTicks
-	broadcast(d, opGameOver, map[string]any{"results": s.results()}, s.presences())
+	broadcast(d, opGameOver, map[string]any{"results": results}, s.presences())
 	_ = d.MatchLabelUpdate(s.label())
 }
 
@@ -167,6 +185,7 @@ func (m *typingMatch) MatchInit(ctx context.Context, logger runtime.Logger, db *
 		code:    code,
 		phase:   phaseLobby,
 		players: map[string]*player{},
+		rng:     rand.New(rand.NewPCG(rand.Uint64(), rand.Uint64())),
 	}
 	return s, tickRate, s.label()
 }
@@ -193,7 +212,7 @@ func (m *typingMatch) MatchJoin(ctx context.Context, logger runtime.Logger, db *
 			p.presence, p.Connected = pr, true // same player, new connection
 			continue
 		}
-		s.players[id] = &player{presence: pr, UserID: id, Username: pr.GetUsername(), Connected: true}
+		s.players[id] = newPlayer(pr)
 		s.order = append(s.order, id)
 		if s.hostID == "" {
 			s.hostID = id
@@ -223,14 +242,14 @@ func (m *typingMatch) MatchLeave(ctx context.Context, logger runtime.Logger, db 
 				}
 			}
 		} else {
-			// Mid-game we keep their progress. Rejoining comes in a later batch.
+			// Mid-game they stay in: the storm catches them unless they come back
+			// (rejoining comes in the next batch).
 			p.Connected = false
-			s.dirty = true
 		}
 		if s.hostID == id {
 			s.hostID = ""
 			for _, oid := range s.order {
-				if s.players[oid].Connected {
+				if o := s.players[oid]; o.Connected && !o.Bot {
 					s.hostID = oid
 					break
 				}
@@ -267,29 +286,19 @@ func (m *typingMatch) MatchLoop(ctx context.Context, logger runtime.Logger, db *
 		case opStart:
 			m.handleStart(s, d, tick, p)
 		case opKeys:
-			m.handleKeys(s, tick, p, msg.GetData())
+			s.handleKeys(d, p, msg.GetData())
+		case opAction:
+			s.handleAction(d, p, string(msg.GetData()))
+		case opAddBots:
+			s.handleAddBots(d, p, msg.GetData())
 		}
 	}
 
 	if s.phase == phaseCountdown && tick >= s.startTick {
 		s.phase = phasePlaying
 	}
-
 	if s.phase == phasePlaying {
-		allDone := true
-		for _, p := range s.players {
-			if p.Connected && p.Place == 0 {
-				allDone = false
-				break
-			}
-		}
-		if s.dirty {
-			broadcast(d, opProgress, map[string]any{"players": s.playerList()}, s.presences())
-			s.dirty = false
-		}
-		if allDone || tick-s.startTick >= raceTimeLimit {
-			s.finish(d, tick)
-		}
+		s.gameTick(d, tick)
 	}
 	return s
 }
@@ -302,41 +311,15 @@ func (m *typingMatch) handleStart(s *matchState, d runtime.MatchDispatcher, tick
 	if !s.private && len(s.players) < s.mode.MinPlayers {
 		return
 	}
-	rng := rand.New(rand.NewPCG(uint64(tick), rand.Uint64()))
-	s.text = []rune(generateText(rng, raceWordCount))
 	s.phase = phaseCountdown
 	s.startTick = tick + countdownSeconds*tickRate
 
-	broadcast(d, opGameInit, map[string]any{
-		"text":         string(s.text),
-		"countdown_ms": countdownSeconds * 1000,
-	}, s.presences())
+	broadcast(d, opGameInit, map[string]any{"countdown_ms": countdownSeconds * 1000}, s.presences())
+	for _, p := range s.players {
+		s.ensureLookahead(d, p) // everyone gets the same opening words
+	}
 	_ = d.MatchLabelUpdate(s.label())
 	s.sendLobby(d)
-}
-
-// handleKeys checks each typed character against the text. Right advances the
-// cursor; wrong counts an error and the cursor stays put.
-func (m *typingMatch) handleKeys(s *matchState, tick int64, p *player, data []byte) {
-	if s.phase != phasePlaying || p.Place > 0 || !utf8.Valid(data) {
-		return
-	}
-	for i, r := range []rune(string(data)) {
-		if i >= maxKeysPerTick || p.Pos >= len(s.text) {
-			break
-		}
-		if r == s.text[p.Pos] {
-			p.Pos++
-		} else {
-			p.Errors++
-		}
-		s.dirty = true
-	}
-	if p.Pos >= len(s.text) && p.Place == 0 {
-		s.finishedCount++
-		p.Place = s.finishedCount
-		p.TimeMs = (tick - s.startTick) * 1000 / tickRate
-	}
 }
 
 func (m *typingMatch) MatchTerminate(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runtime.NakamaModule, d runtime.MatchDispatcher, tick int64, state interface{}, graceSeconds int) interface{} {

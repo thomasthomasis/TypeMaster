@@ -21,6 +21,7 @@ services:
       DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-http://localhost:5173/auth/discord/callback}
       GUEST_INACTIVE_DAYS: ${GUEST_INACTIVE_DAYS:-30}
       GUEST_CLEANUP_DRY_RUN: ${GUEST_CLEANUP_DRY_RUN:-true}
+      DEV_MODE: ${DEV_MODE:-false}
     entrypoint:
       - /bin/sh
       - -ec
@@ -40,6 +41,7 @@ services:
         --runtime.env "DISCORD_REDIRECT_URI=$$DISCORD_REDIRECT_URI"
         --runtime.env "GUEST_INACTIVE_DAYS=$$GUEST_INACTIVE_DAYS"
         --runtime.env "GUEST_CLEANUP_DRY_RUN=$$GUEST_CLEANUP_DRY_RUN"
+        --runtime.env "DEV_MODE=$$DEV_MODE"
     ports: ["7349:7349", "7350:7350", "7351:7351"]
 
   mailpit:

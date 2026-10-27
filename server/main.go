@@ -11,6 +11,7 @@ type config struct {
 	SMTPHost, SMTPPort, SMTPFrom, SMTPUser, SMTPPass         string
 	DiscordClientID, DiscordClientSecret, DiscordRedirectURI string
 	GuestInactiveDays, GuestCleanupDryRun string
+	DevMode string
 }
 
 var cfg config
@@ -29,6 +30,7 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 		DiscordRedirectURI:  env["DISCORD_REDIRECT_URI"],
 		GuestInactiveDays:   env["GUEST_INACTIVE_DAYS"],
 		GuestCleanupDryRun:  env["GUEST_CLEANUP_DRY_RUN"],
+		DevMode: 			 env["DEV_MODE"],
 	}
 
 	// Auth hooks

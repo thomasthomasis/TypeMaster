@@ -169,3 +169,88 @@ ol.player-list {
   color: var(--accent);
   letter-spacing: 0.2em;
 }
+
+/* --- battle --- */
+
+.race-text .garbage {
+  color: var(--error);
+}
+
+.race-text .cursor.garbage {
+  color: var(--bg);
+  background: var(--error);
+}
+
+.hud {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar span:first-child {
+  width: 3.5rem;
+  color: var(--muted);
+}
+
+.bar progress {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.bar.danger progress {
+  accent-color: var(--error);
+}
+
+.events {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-height: 5.5em;
+}
+
+.results {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results th,
+.results td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.results th {
+  color: var(--muted);
+  font-weight: normal;
+}
+
+.results tr.me td {
+  color: var(--accent);
+}
+
+/* --- dev tools (npm run dev only) --- */
+
+.dev-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  border: 1px dashed var(--muted);
+  padding: 8px 12px;
+}
+
+.dev-panel legend {
+  color: var(--muted);
+}
+
+.dev-panel input[type='number'] {
+  width: 4.5rem;
+  padding: 4px 6px;
+}
