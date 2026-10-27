@@ -9,6 +9,8 @@ import DiscordCallback from './pages/DiscordCallback'
 import Account from './pages/Account'
 import Home from './pages/Home'
 import ChooseUsername from './pages/ChooseUsername'
+import Play from './pages/Play'
+import Match from './pages/Match'
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
@@ -31,6 +33,8 @@ export default function App() {
           <Route element={<RequireAuth />}>
             <Route path="/" element={<Home />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/play" element={<Play />} />
+            <Route path="/match" element={<Match />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -51,6 +51,8 @@ export async function errorMessage(err: unknown): Promise<string> {
     }
   }
   if (typeof err === 'string') return err
+  // Socket errors (e.g. a rejected match join) arrive as { code, message }
+  if(err && typeof err === 'object' && 'message' in err && typeof err.message === 'string') return err.message
   if (err instanceof Error) return err.message
   return 'Something went wrong'
 }

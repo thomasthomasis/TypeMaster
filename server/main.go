@@ -79,6 +79,16 @@ func InitModule(ctx context.Context, logger runtime.Logger, db *sql.DB, nk runti
 	if err := initializer.RegisterRpc("set_username", rpcSetUsername); err != nil {
 		return err
 	}
+	// Matches
+	if err := initializer.RegisterMatch(matchModule, newTypingMatch); err != nil {
+		return err
+	}
+	if err := initializer.RegisterRpc("create_private_match", rpcCreatePrivateMatch); err != nil {
+		return err
+	}
+	if err := initializer.RegisterRpc("find_private_match", rpcFindPrivateMatch); err != nil {
+		return err
+	}
 
 	ensureUsernameIndex(ctx, logger, db)
 

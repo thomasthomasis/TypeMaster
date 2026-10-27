@@ -116,3 +116,56 @@ a {
   color: var(--accent);
   margin: 0;
 }
+
+/* --- match --- */
+
+.panel.match {
+  max-width: 760px;
+}
+
+.race-text {
+  font-size: 1.3rem;
+  line-height: 1.7;
+  margin: 0;
+  color: var(--muted);
+}
+
+.race-text .typed {
+  color: var(--text);
+}
+
+.race-text .cursor {
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.player-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+ol.player-list {
+  list-style: decimal inside;
+}
+
+.player-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.player-list progress {
+  flex: 1;
+  max-width: 60%;
+  accent-color: var(--accent);
+}
+
+.code {
+  color: var(--accent);
+  letter-spacing: 0.2em;
+}

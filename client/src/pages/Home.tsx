@@ -22,8 +22,9 @@ export default function Home() {
           casual only. <Link to="/account">link an email or discord</Link> to unlock ranked
         </p>
       )}
-      <Link to="/account">account</Link>
-      <button onClick={logout}>sign out</button>
+        <Link to="/play">play</Link>
+        <Link to="/account">account</Link>
+        <button onClick={logout}>sign out</button>
     </div>
   )
 }
